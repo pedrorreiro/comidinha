@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Input } from "@chakra-ui/react";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+const APP_LOGO_SRC = "/logo.png";
+const AUTH_TEXT_COLOR = "var(--app-body-fg)";
+const AUTH_SUBTLE_TEXT_COLOR = "var(--app-ph)";
+const AUTH_FORM_BG = "var(--app-input-bg)";
+const AUTH_INPUT_BG = "var(--app-input-bg)";
+const AUTH_INPUT_TEXT = "var(--app-input-fg)";
+const AUTH_BORDER = "var(--app-input-border)";
 
 type AuthMode = "login" | "signup";
 
@@ -55,21 +62,88 @@ export function AuthForm() {
 
   return (
     <Box
+      className="auth-form"
       w="100%"
       maxW="420px"
+      position="relative"
+      zIndex={2}
+      isolation="isolate"
       p={{ base: 5, md: 6 }}
       borderRadius="2xl"
-      bg="var(--app-input-bg)"
+      bg={AUTH_FORM_BG}
       borderWidth="1px"
-      borderColor="var(--app-input-border)"
+      borderColor={AUTH_BORDER}
       boxShadow="0 12px 32px rgba(15, 23, 42, 0.14)"
     >
-      <Text fontSize="lg" fontWeight="semibold" color="var(--app-body-fg)" mb={1}>
+      <div
+        data-auth-visible
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginBottom: "24px",
+          opacity: 1,
+          visibility: "visible",
+        }}
+      >
+        <div
+          className="auth-logo-box"
+          data-auth-visible
+          style={{
+            width: "72px",
+            height: "72px",
+            borderRadius: "16px",
+            marginBottom: "16px",
+            border: `1px solid ${AUTH_BORDER}`,
+            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.08)",
+            display: "grid",
+            placeItems: "center",
+            overflow: "hidden",
+          }}
+        >
+          <img
+            src={APP_LOGO_SRC}
+            alt="Logo do Diário Alimentar"
+            style={{
+              width: "64px",
+              height: "64px",
+              objectFit: "contain",
+              objectPosition: "center",
+              display: "block",
+            }}
+          />
+        </div>
+        <div
+          data-auth-visible
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            color: AUTH_TEXT_COLOR,
+            textAlign: "center",
+            display: "block",
+            lineHeight: 1.2,
+            opacity: 1,
+            visibility: "visible",
+          }}
+        >
+          Diário Alimentar
+        </div>
+      </div>
+      <div
+        data-auth-visible
+        style={{
+          fontSize: "16px",
+          fontWeight: 600,
+          color: AUTH_TEXT_COLOR,
+          marginBottom: "14px",
+          display: "block",
+          lineHeight: 1.2,
+          opacity: 1,
+          visibility: "visible",
+        }}
+      >
         {mode === "login" ? "Entrar" : "Criar conta"}
-      </Text>
-      <Text fontSize="sm" color="var(--app-ph)" mb={5}>
-        Cada usuário acessa apenas as próprias refeições.
-      </Text>
+      </div>
 
       <Flex direction="column" gap={3}>
         <Input
@@ -79,20 +153,20 @@ export function AuthForm() {
           placeholder="E-mail"
           borderRadius="lg"
           size="sm"
-          bg="var(--app-input-bg)"
-          borderColor="var(--app-input-border)"
-          color="var(--app-input-fg)"
+          bg={AUTH_INPUT_BG}
+          borderColor={AUTH_BORDER}
+          color={AUTH_INPUT_TEXT}
         />
         <Input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Senha (mín. 6 caracteres)"
+          placeholder="Senha"
           borderRadius="lg"
           size="sm"
-          bg="var(--app-input-bg)"
-          borderColor="var(--app-input-border)"
-          color="var(--app-input-fg)"
+          bg={AUTH_INPUT_BG}
+          borderColor={AUTH_BORDER}
+          color={AUTH_INPUT_TEXT}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -118,15 +192,15 @@ export function AuthForm() {
           size="sm"
           variant="ghost"
           borderRadius="lg"
-          color="var(--app-ph)"
-          _hover={{ bg: "rgba(100, 116, 139, 0.14)", color: "var(--app-body-fg)" }}
+          color={AUTH_SUBTLE_TEXT_COLOR}
+          _hover={{ bg: "rgba(100, 116, 139, 0.14)", color: AUTH_TEXT_COLOR }}
           onClick={() =>
             setMode((prev) => (prev === "login" ? "signup" : "login"))
           }
         >
           {mode === "login"
-            ? "Não tem conta? Criar agora"
-            : "Já tem conta? Fazer login"}
+            ? "Criar conta"
+            : "Já tenho conta"}
         </Button>
       </Flex>
     </Box>

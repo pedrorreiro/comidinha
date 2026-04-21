@@ -41,3 +41,23 @@ html.light {
   --app-mesh-violet: rgba(110, 95, 155, 0.06);
   scrollbar-color: rgba(100, 116, 139, 0.35) rgba(226, 232, 240, 0.9);
 }
+
+/* Blindagem do formulário de auth contra regras externas que escondem texto/imagem */
+.auth-form [data-auth-visible] {
+  visibility: visible !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.auth-form input,
+.auth-form button {
+  -webkit-text-fill-color: inherit !important;
+}
+
+html.dark .auth-logo-box {
+  background-color: rgba(15, 23, 42, 0.78) !important;
+}
+
+html.light .auth-logo-box {
+  background-color: #ffffff !important;
+}

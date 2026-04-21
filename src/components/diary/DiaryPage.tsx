@@ -12,7 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { CalendarDays, FileDown, Plus, UserRound, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, FileDown, Plus, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
 import { useDiary } from "@/hooks/useDiary";
@@ -29,6 +29,7 @@ import { QuickMealEntry } from "./QuickMealEntry";
 import { TodaySummaryCard } from "./TodaySummaryCard";
 
 export function DiaryPage() {
+  const APP_LOGO_SRC = "/logo.png";
   const palette = usePalette();
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -289,12 +290,9 @@ export function DiaryPage() {
               borderWidth="1px"
               borderColor={palette.logoBorder}
               boxShadow={palette.cardShadow}
+              overflow="hidden"
             >
-              <UtensilsCrossed
-                size={22}
-                color={palette.logoIcon}
-                strokeWidth={1.75}
-              />
+              <Image src={APP_LOGO_SRC} alt="Diário Alimentar" w="100%" h="100%" objectFit="cover" />
             </Flex>
             <Box>
               <Text
