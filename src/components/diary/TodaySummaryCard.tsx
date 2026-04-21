@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { Box, Button, Flex, Input, SimpleGrid, Text } from "@chakra-ui/react";
 import { Check, PencilLine, Plus, Trash2, X } from "lucide-react";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
@@ -66,6 +66,18 @@ export function TodaySummaryCard({
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [moodPickerSlot]);
+
+  useEffect(() => {
+    startTransition(() => {
+      setEditingSlot(null);
+      setMoodPickerSlot(null);
+      setItemDraft("");
+      setItems([]);
+      setMood(3);
+      setEditingIdx(null);
+      setEditDraft("");
+    });
+  }, [ymd]);
 
   const parseMealText = (text: string): { items: string[]; mood: number } => {
     const moodMatch = text.match(/\[([^\]]+)\]\s*Refeição/i);

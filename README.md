@@ -9,7 +9,14 @@ App em Next.js para registrar refeições por período do dia e exportar PDF men
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+DATABASE_URL=...
+DIRECT_URL=...
 ```
+
+Para produção com Prisma + Supabase:
+
+- `DATABASE_URL`: use a URL do **Connection Pooling** (porta `6543`, com `?pgbouncer=true&connection_limit=1&sslmode=require`).
+- `DIRECT_URL`: use a URL **direta** do banco (host `db.<project-ref>.supabase.co`, porta `5432`, com `?sslmode=require`) para migrations.
 
 2. No painel do Supabase, execute o SQL de `supabase/schema.sql`.
 3. Em **Authentication > Providers**, deixe o provedor de e-mail/senha ativo.

@@ -42,7 +42,9 @@ export function OutingEntryCard({ onAddOuting }: OutingEntryCardProps) {
     if (editingIdx === null) return;
     const trimmed = editDraft.trim();
     if (!trimmed) return;
-    setItems((prev) => prev.map((item, idx) => (idx === editingIdx ? trimmed : item)));
+    setItems((prev) =>
+      prev.map((item, idx) => (idx === editingIdx ? trimmed : item)),
+    );
     setEditingIdx(null);
     setEditDraft("");
   };

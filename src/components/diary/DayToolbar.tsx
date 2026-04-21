@@ -25,7 +25,7 @@ export function DayToolbar({
   const longCap = longLabel.charAt(0).toUpperCase() + longLabel.slice(1);
 
   return (
-    <Flex direction="column" gap={2} mb={6}>
+    <Flex direction="column" gap={2} mb={{ base: 4, md: 6 }}>
       <motion.div
         key={`${year}-${month}-${day}`}
         initial={{ opacity: 0, y: 6 }}
@@ -34,7 +34,7 @@ export function DayToolbar({
         style={{ minWidth: 0 }}
       >
         <Heading
-          size="lg"
+          size={{ base: "md", md: "lg" }}
           fontWeight="semibold"
           letterSpacing="-0.03em"
           color={palette.text}

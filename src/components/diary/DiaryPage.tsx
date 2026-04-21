@@ -11,7 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { FileDown, Plus, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, FileDown, Plus, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
 import { useDiary } from "@/hooks/useDiary";
@@ -38,6 +38,7 @@ export function DiaryPage() {
   const [exporting, setExporting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false);
   const handleSignOut = useCallback(async () => {
     try {
       const supabase = createSupabaseBrowserClient();
@@ -139,17 +140,17 @@ export function DiaryPage() {
         as="header"
         position="relative"
         zIndex={1}
-        px={{ base: 5, md: 10 }}
-        pt={{ base: 6, md: 8 }}
+        px={{ base: 3.5, sm: 5, md: 10 }}
+        pt={{ base: 4, md: 8 }}
         pb={2}
       >
-        <Flex justify="space-between" align="center" gap={4} flexWrap="wrap">
+        <Flex justify="space-between" align="center" gap={3} flexWrap="wrap">
           <Flex align="center" gap={3}>
             <Flex
               align="center"
               justify="center"
-              w="44px"
-              h="44px"
+              w={{ base: "38px", md: "44px" }}
+              h={{ base: "38px", md: "44px" }}
               borderRadius="xl"
               bg={palette.logoFill}
               borderWidth="1px"
@@ -164,22 +165,26 @@ export function DiaryPage() {
             </Flex>
             <Box>
               <Text
-                fontSize="lg"
+                fontSize={{ base: "md", md: "lg" }}
                 fontWeight="semibold"
                 letterSpacing="-0.03em"
                 color={palette.text}
               >
                 Diário alimentar
               </Text>
-              <Text fontSize="sm" color={palette.fgSubtle}>
+              <Text
+                display={{ base: "none", md: "block" }}
+                fontSize="sm"
+                color={palette.fgSubtle}
+              >
                 Registre o dia de hoje; use as setas ou o calendário para outro
                 dia
               </Text>
             </Box>
           </Flex>
-          <Flex align="center" gap={2}>
+          <Flex align="center" gap={{ base: 1.5, md: 2 }}>
             <Button
-              size="sm"
+              size={{ base: "xs", md: "sm" }}
               borderRadius="lg"
               gap={2}
               onClick={() => setExportOpen(true)}
@@ -214,8 +219,8 @@ export function DiaryPage() {
       <Box
         as="main"
         flex="1"
-        px={{ base: 5, md: 10 }}
-        py={{ base: 4, md: 6 }}
+        px={{ base: 3.5, sm: 5, md: 10 }}
+        py={{ base: 3, md: 6 }}
         overflowY="auto"
         position="relative"
         zIndex={1}
@@ -231,7 +236,10 @@ export function DiaryPage() {
         >
           <Box
             w={{ base: "100%", lg: "460px" }}
+            maxW={{ base: "390px", lg: "460px" }}
+            mx={{ base: "auto", lg: 0 }}
             flexShrink={0}
+            display={{ base: "none", lg: "block" }}
             position={{ base: "static", lg: "sticky" }}
             top={{ lg: "16px" }}
           >
@@ -241,7 +249,7 @@ export function DiaryPage() {
             />
           </Box>
 
-          <Box flex="1" minW={0}>
+          <Box flex="1" minW={0} w="100%">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -264,6 +272,28 @@ export function DiaryPage() {
           </Box>
         </Flex>
       </Box>
+
+      <Button
+        display={{ base: "inline-flex", lg: "none" }}
+        position="fixed"
+        right={{ base: 20, md: 24 }}
+        bottom={{ base: 4, md: 8 }}
+        zIndex={25}
+        w="52px"
+        h="52px"
+        borderRadius="full"
+        p={0}
+        onClick={() => setMobileCalendarOpen(true)}
+        bg={palette.surfaceSoft}
+        color={palette.text}
+        borderWidth="1px"
+        borderColor={palette.border}
+        boxShadow={palette.cardShadow}
+        _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
+        aria-label="Abrir calendário"
+      >
+        <CalendarDays size={22} strokeWidth={2} />
+      </Button>
 
       <Button
         position="fixed"
@@ -308,6 +338,34 @@ export function DiaryPage() {
               onAddEntry={(slot, items, mood) => {
                 handleQuickAdd(slot, items, mood);
                 setQuickAddOpen(false);
+              }}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {mobileCalendarOpen && (
+        <Box
+          display={{ base: "flex", lg: "none" }}
+          position="fixed"
+          inset={0}
+          zIndex={30}
+          bg={palette.backdrop}
+          alignItems="center"
+          justifyContent="center"
+          px={4}
+          onClick={() => setMobileCalendarOpen(false)}
+        >
+          <Box
+            w="100%"
+            maxW="420px"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <InlineCalendar
+              selectedYmd={selectedYmd}
+              onSelectDate={(ymd) => {
+                handlePickDate(ymd);
+                setMobileCalendarOpen(false);
               }}
             />
           </Box>

@@ -11,12 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  daysInMonth,
-  formatYmd,
-  parseYmd,
-  todayYmd,
-} from "@/lib/dates";
+import { daysInMonth, formatYmd, parseYmd, todayYmd } from "@/lib/dates";
 import { usePalette } from "@/theme/ThemePaletteContext";
 
 type InlineCalendarProps = {
@@ -83,8 +78,8 @@ export function InlineCalendar({
 
   return (
     <Box
-      p={4}
-      mb={6}
+      p={{ base: 3, md: 4 }}
+      mb={{ base: 4, md: 6 }}
       borderRadius="2xl"
       bg={palette.surfaceSoft}
       borderWidth="1px"
@@ -100,11 +95,11 @@ export function InlineCalendar({
       <Flex
         justify="space-between"
         align="center"
-        gap={2}
-        mb={3}
+        gap={{ base: 1.5, md: 2 }}
+        mb={{ base: 2, md: 3 }}
         flexWrap="wrap"
       >
-        <Flex align="center" gap={2}>
+        <Flex align="center" gap={{ base: 1, md: 2 }}>
           <IconButton
             aria-label="Mês anterior"
             variant="outline"
@@ -121,15 +116,15 @@ export function InlineCalendar({
             value={String(viewMonth)}
             onChange={(e) => setViewMonth(Number(e.currentTarget.value))}
             style={{
-              height: "28px",
-              paddingInline: "10px",
+              height: "26px",
+              paddingInline: "8px",
               borderRadius: "8px",
               borderWidth: "1px",
               borderStyle: "solid",
               borderColor: palette.border,
               background: "transparent",
               color: palette.text,
-              fontSize: "12px",
+              fontSize: "11px",
             }}
           >
             {MONTHS_PT.map((label, idx) => (
@@ -142,15 +137,15 @@ export function InlineCalendar({
             value={String(viewYear)}
             onChange={(e) => setViewYear(Number(e.currentTarget.value))}
             style={{
-              height: "28px",
-              paddingInline: "10px",
+              height: "26px",
+              paddingInline: "8px",
               borderRadius: "8px",
               borderWidth: "1px",
               borderStyle: "solid",
               borderColor: palette.border,
               background: "transparent",
               color: palette.text,
-              fontSize: "12px",
+              fontSize: "11px",
             }}
           >
             {yearOptions.map((year) => (
@@ -173,7 +168,7 @@ export function InlineCalendar({
           </IconButton>
         </Flex>
         <Button
-          size="xs"
+          size={{ base: "2xs", md: "xs" }}
           borderRadius="lg"
           bg={palette.navActive}
           color={palette.text}
@@ -192,16 +187,26 @@ export function InlineCalendar({
         </Button>
       </Flex>
 
-      <Grid templateColumns="repeat(7, minmax(0, 1fr))" gap={2}>
+      <Grid templateColumns="repeat(7, minmax(0, 1fr))" gap={{ base: 1.5, md: 2 }}>
         {WEEKDAYS.map((d) => (
           <GridItem key={d}>
             <Text
+              display={{ base: "none", sm: "block" }}
               fontSize="xs"
               textAlign="center"
               color={palette.textMuted}
               fontWeight="semibold"
             >
               {d}
+            </Text>
+            <Text
+              display={{ base: "block", sm: "none" }}
+              fontSize="10px"
+              textAlign="center"
+              color={palette.textMuted}
+              fontWeight="semibold"
+            >
+              {d.charAt(0)}
             </Text>
           </GridItem>
         ))}
@@ -221,7 +226,7 @@ export function InlineCalendar({
                 size="xs"
                 w="100%"
                 minW={0}
-                h="30px"
+                h={{ base: "26px", md: "30px" }}
                 borderRadius="md"
                 variant={isSelected ? "solid" : "outline"}
                 bg={isSelected ? palette.navActive : "transparent"}

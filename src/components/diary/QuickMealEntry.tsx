@@ -52,7 +52,9 @@ export function QuickMealEntry({ slots, onAddEntry }: QuickMealEntryProps) {
     if (editingIdx === null) return;
     const trimmed = normalizeItemText(editDraft);
     if (!trimmed) return;
-    setItems((prev) => prev.map((item, idx) => (idx === editingIdx ? trimmed : item)));
+    setItems((prev) =>
+      prev.map((item, idx) => (idx === editingIdx ? trimmed : item)),
+    );
     setEditingIdx(null);
     setEditDraft("");
   };
@@ -199,7 +201,12 @@ export function QuickMealEntry({ slots, onAddEntry }: QuickMealEntryProps) {
           >
             <Flex direction="column" gap={2}>
               {items.map((item, idx) => (
-                <Flex key={`${item}-${idx}`} justify="space-between" align="center" gap={3}>
+                <Flex
+                  key={`${item}-${idx}`}
+                  justify="space-between"
+                  align="center"
+                  gap={3}
+                >
                   {editingIdx === idx ? (
                     <Input
                       value={editDraft}
