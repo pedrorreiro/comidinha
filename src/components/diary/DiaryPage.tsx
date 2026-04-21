@@ -276,8 +276,8 @@ export function DiaryPage() {
       <Button
         display={{ base: "inline-flex", lg: "none" }}
         position="fixed"
-        right={{ base: 20, md: 24 }}
-        bottom={{ base: 4, md: 8 }}
+        right={{ base: 4, md: 8 }}
+        bottom={{ base: 20, md: 26 }}
         zIndex={25}
         w="52px"
         h="52px"
@@ -305,15 +305,15 @@ export function DiaryPage() {
         borderRadius="full"
         p={0}
         onClick={() => setQuickAddOpen(true)}
-        bg={palette.navActive}
-        color={palette.text}
+        bg="#ffffff"
+        color="#0f172a"
         borderWidth="1px"
-        borderColor={palette.navActiveBorder}
-        boxShadow={palette.cardShadow}
-        _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
+        borderColor="rgba(15, 23, 42, 0.14)"
+        boxShadow="0 16px 28px rgba(15, 23, 42, 0.2)"
+        _hover={{ bg: "#f8fafc", borderColor: "rgba(15, 23, 42, 0.22)" }}
         aria-label="Abrir adição rápida"
       >
-        <Plus size={22} strokeWidth={2} />
+        <Plus size={22} strokeWidth={2} color="#0f172a" />
       </Button>
 
       {quickAddOpen && (
