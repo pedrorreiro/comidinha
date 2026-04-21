@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DiaryMeal {
+  userId    String   @map("user_id") @db.Uuid
+  dateYmd   String   @map("date_ymd")
+  slot      String
+  content   String
+  updatedAt DateTime @map("updated_at") @db.Timestamptz(6)
+
+  @@id([userId, dateYmd, slot])
+  @@index([userId, dateYmd], map: "idx_diary_meals_user_date")
+  @@map("diary_meals")
+}
