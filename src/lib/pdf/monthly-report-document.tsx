@@ -10,7 +10,7 @@ import {
   daysInMonth,
   formatYmd,
   monthTitlePt,
-  weekdayShortPt,
+  longDatePt,
 } from "@/lib/dates";
 import type { MealSlotId } from "@/types/diary";
 
@@ -25,8 +25,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   reportHeader: {
-    marginBottom: 16,
-    paddingBottom: 10,
+    marginBottom: 14,
+    paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
   },
@@ -39,7 +39,12 @@ const styles = StyleSheet.create({
   reportSubtitle: {
     fontSize: 11,
     color: "#475569",
-    marginBottom: 6,
+    marginBottom: 4,
+  },
+  reportMeta: {
+    fontSize: 8.5,
+    color: "#64748b",
+    marginBottom: 5,
   },
   reportNote: {
     fontSize: 8.5,
@@ -48,36 +53,51 @@ const styles = StyleSheet.create({
     maxWidth: 430,
   },
   dayBlock: {
-    marginBottom: 18,
-    borderLeftWidth: 3,
-    borderLeftColor: "#3d6ea8",
-    paddingLeft: 12,
-    paddingBottom: 10,
+    marginBottom: 14,
+    borderLeftWidth: 2,
+    borderLeftColor: "#6f94c0",
+    paddingLeft: 10,
+    paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
   },
   dayTitle: {
     fontFamily: "Helvetica-Bold",
     fontSize: 11,
-    marginBottom: 8,
+    marginBottom: 7,
     color: "#0f172a",
   },
+  dayTable: {
+    borderWidth: 1,
+    borderColor: "#dbe4ef",
+    borderRadius: 6,
+    overflow: "hidden",
+    marginLeft: 2,
+  },
   slotRow: {
-    marginBottom: 6,
-    paddingLeft: 6,
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e8eef6",
   },
   slotLabel: {
-    fontSize: 8,
+    width: "33%",
+    fontSize: 8.2,
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    color: "#64748b",
-    marginBottom: 4,
+    color: "#475569",
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    borderRightWidth: 1,
+    borderRightColor: "#e8eef6",
   },
   slotBody: {
-    fontSize: 10,
-    lineHeight: 1.45,
+    fontSize: 9.5,
+    lineHeight: 1.4,
     color: "#1e293b",
-    marginLeft: 6,
+    width: "67%",
+    paddingHorizontal: 8,
+    paddingVertical: 7,
   },
   emptyMonthBox: {
     marginTop: 8,
@@ -132,6 +152,13 @@ function normalizeSlotContentForPdf(raw?: string): string {
   return lines.map((line) => `• ${line}`).join("\n");
 }
 
+function filledSlotsOfDay(dayData?: Partial<Record<MealSlotId, string>>) {
+  return MEAL_SLOTS.map((slot) => ({
+    slot,
+    content: normalizeSlotContentForPdf(dayData?.[slot.id]),
+  })).filter((entry) => entry.content !== "—");
+}
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) {
@@ -154,7 +181,7 @@ export function MonthlyReportDocument({
     if (!dayData) return false;
     return MEAL_SLOTS.some((slot) => (dayData[slot.id] ?? "").trim().length > 0);
   });
-  const dayChunks = chunk(filledYmdList, 2);
+  const dayChunks = chunk(filledYmdList, 3);
   const monthTitle = (() => {
     const t = monthTitlePt(year, month);
     return t.charAt(0).toUpperCase() + t.slice(1);
@@ -171,6 +198,9 @@ export function MonthlyReportDocument({
           <View style={styles.reportHeader}>
             <Text style={styles.reportTitle}>Diário alimentar</Text>
             <Text style={styles.reportSubtitle}>{monthTitle}</Text>
+            <Text style={styles.reportMeta}>
+              Dias com registro: {filledYmdList.length}
+            </Text>
             <Text style={styles.reportNote}>
               Registro das refeições por dia para compartilhar com profissional
               de saúde ou nutricionista.
@@ -198,6 +228,9 @@ export function MonthlyReportDocument({
               <View style={styles.reportHeader}>
                 <Text style={styles.reportTitle}>Diário alimentar</Text>
                 <Text style={styles.reportSubtitle}>{monthTitle}</Text>
+                <Text style={styles.reportMeta}>
+                  Dias com registro: {filledYmdList.length}
+                </Text>
                 <Text style={styles.reportNote}>
                   Registro das refeições por dia para compartilhar com
                   profissional de saúde ou nutricionista.
@@ -207,21 +240,28 @@ export function MonthlyReportDocument({
             {chunkYmd.map((ymd) => {
               const dayNum = Number(ymd.slice(8, 10));
               const dayData = days[ymd];
+              const dayTitle = longDatePt(year, month, dayNum);
+              const dayTitleCap =
+                dayTitle.charAt(0).toUpperCase() + dayTitle.slice(1);
               return (
                 <View key={ymd} style={styles.dayBlock}>
-                  <Text style={styles.dayTitle}>
-                    {String(dayNum).padStart(2, "0")} ·{" "}
-                    {weekdayShortPt(year, month, dayNum)}
-                  </Text>
-                  {MEAL_SLOTS.map((slot) => {
-                    const v = normalizeSlotContentForPdf(dayData?.[slot.id]);
-                    return (
-                      <View key={slot.id} style={styles.slotRow}>
+                  <Text style={styles.dayTitle}>{dayTitleCap}</Text>
+                  <View style={styles.dayTable}>
+                    {filledSlotsOfDay(dayData).map(({ slot, content }, idx, arr) => (
+                      <View
+                        key={slot.id}
+                        style={[
+                          styles.slotRow,
+                          idx === arr.length - 1
+                            ? { borderBottomWidth: 0 }
+                            : {},
+                        ]}
+                      >
                         <Text style={styles.slotLabel}>{slot.label}</Text>
-                        <Text style={styles.slotBody}>{v}</Text>
+                        <Text style={styles.slotBody}>{content}</Text>
                       </View>
-                    );
-                  })}
+                    ))}
+                  </View>
                 </View>
               );
             })}
