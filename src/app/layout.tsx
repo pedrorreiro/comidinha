@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Saborê",
   description:
-    "Registre café da manhã, almoço, lanches e jantar e exporte o mês em PDF para sua nutricionista.",
+    "Registre café da manhã, almoço, lanches e jantar e exporte o mês em PDF para seu nutricionista.",
 };
 
 export default function RootLayout({

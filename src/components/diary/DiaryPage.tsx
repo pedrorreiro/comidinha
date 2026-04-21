@@ -92,7 +92,7 @@ export function DiaryPage() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      router.replace("/auth");
+      router.replace("/");
       router.refresh();
     } catch (error) {
       console.error("Erro ao sair da conta:", error);

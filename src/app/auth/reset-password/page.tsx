@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
               variant="ghost"
               color="var(--app-ph)"
               _hover={{ bg: "rgba(100, 116, 139, 0.14)", color: "var(--app-body-fg)" }}
-              onClick={() => router.replace("/auth")}
+              onClick={() => router.replace("/")}
             >
               Voltar para login
             </Button>

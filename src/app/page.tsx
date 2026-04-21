@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { DiaryPage } from "@/components/diary/DiaryPage";
+import { HeroLanding } from "@/components/marketing/HeroLanding";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function Home() {
@@ -9,7 +9,7 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth");
+    return <HeroLanding />;
   }
 
   return <DiaryPage />;
