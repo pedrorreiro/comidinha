@@ -133,7 +133,7 @@ export function AuthForm() {
         >
           <img
             src={APP_LOGO_SRC}
-            alt="Logo do Diário Alimentar"
+            alt="Logo do Saborê"
             style={{
               width: "64px",
               height: "64px",
@@ -156,7 +156,7 @@ export function AuthForm() {
             visibility: "visible",
           }}
         >
-          Diário Alimentar
+          Saborê
         </div>
       </div>
       <div

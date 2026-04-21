@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Diário alimentar",
+  title: "Saborê",
   description:
     "Registre café da manhã, almoço, lanches e jantar e exporte o mês em PDF para sua nutricionista.",
 };

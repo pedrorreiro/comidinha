@@ -292,7 +292,7 @@ export function DiaryPage() {
               boxShadow={palette.cardShadow}
               overflow="hidden"
             >
-              <Image src={APP_LOGO_SRC} alt="Diário Alimentar" w="100%" h="100%" objectFit="cover" />
+              <Image src={APP_LOGO_SRC} alt="Saborê" w="100%" h="100%" objectFit="cover" />
             </Flex>
             <Box>
               <Text
@@ -301,7 +301,7 @@ export function DiaryPage() {
                 letterSpacing="-0.03em"
                 color={palette.text}
               >
-                Diário alimentar
+                Saborê
               </Text>
               <Text
                 display={{ base: "none", md: "block" }}
