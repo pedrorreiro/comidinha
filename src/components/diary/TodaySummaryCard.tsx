@@ -276,7 +276,7 @@ export function TodaySummaryCard({
                         {moodMeta.emoji}
                       </Text>
                     </Button>
-                    {moodPickerSlot === slot.id && editingSlot !== slot.id && (
+                    {moodPickerSlot === slot.id && (
                       <Box
                         position="absolute"
                         top="30px"
