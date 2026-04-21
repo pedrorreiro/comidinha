@@ -14,10 +14,12 @@ const AUTH_INPUT_TEXT = "var(--app-input-fg)";
 const AUTH_BORDER = "var(--app-input-border)";
 
 type AuthMode = "login" | "signup";
+type AuthView = "auth" | "forgot-password";
 
 export function AuthForm() {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
+  const [view, setView] = useState<AuthView>("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,6 +56,34 @@ export function AuthForm() {
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : "Falha ao autenticar.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendResetPasswordEmail = async () => {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      toast.error("Informe seu e-mail para redefinir a senha.");
+      return;
+    }
+
+    setLoading(true);
+    const supabase = createSupabaseBrowserClient();
+
+    try {
+      const redirectTo = `${window.location.origin}/auth/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+        redirectTo,
+      });
+      if (error) throw error;
+      toast.success("Enviamos um link de redefinição para o seu e-mail.");
+      setView("auth");
+      setMode("login");
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Não foi possível enviar o e-mail.";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -142,7 +172,11 @@ export function AuthForm() {
           visibility: "visible",
         }}
       >
-        {mode === "login" ? "Entrar" : "Criar conta"}
+        {view === "forgot-password"
+          ? "Redefinir senha"
+          : mode === "login"
+            ? "Entrar"
+            : "Criar conta"}
       </div>
 
       <Flex direction="column" gap={3}>
@@ -158,6 +192,7 @@ export function AuthForm() {
           color={AUTH_INPUT_TEXT}
         />
         <Input
+          display={view === "forgot-password" ? "none" : "block"}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -178,15 +213,36 @@ export function AuthForm() {
           size="sm"
           borderRadius="lg"
           loading={loading}
-          onClick={() => void submit()}
+          onClick={() =>
+            view === "forgot-password"
+              ? void sendResetPasswordEmail()
+              : void submit()
+          }
           bg="#3d6ea8"
           color="#f8fafc"
           borderWidth="1px"
           borderColor="#5b8ac2"
           _hover={{ bg: "#4b7ab1", borderColor: "#6a96cc" }}
         >
-          {mode === "login" ? "Entrar" : "Criar conta"}
+          {view === "forgot-password"
+            ? "Enviar link"
+            : mode === "login"
+              ? "Entrar"
+              : "Criar conta"}
         </Button>
+
+        {view === "auth" && mode === "login" ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            borderRadius="lg"
+            color={AUTH_SUBTLE_TEXT_COLOR}
+            _hover={{ bg: "rgba(100, 116, 139, 0.14)", color: AUTH_TEXT_COLOR }}
+            onClick={() => setView("forgot-password")}
+          >
+            Esqueci minha senha
+          </Button>
+        ) : null}
 
         <Button
           size="sm"
@@ -194,13 +250,20 @@ export function AuthForm() {
           borderRadius="lg"
           color={AUTH_SUBTLE_TEXT_COLOR}
           _hover={{ bg: "rgba(100, 116, 139, 0.14)", color: AUTH_TEXT_COLOR }}
-          onClick={() =>
-            setMode((prev) => (prev === "login" ? "signup" : "login"))
-          }
+          onClick={() => {
+            if (view === "forgot-password") {
+              setView("auth");
+              setMode("login");
+              return;
+            }
+            setMode((prev) => (prev === "login" ? "signup" : "login"));
+          }}
         >
-          {mode === "login"
-            ? "Criar conta"
-            : "Já tenho conta"}
+          {view === "forgot-password"
+            ? "Voltar para o login"
+            : mode === "login"
+              ? "Criar conta"
+              : "Já tenho conta"}
         </Button>
       </Flex>
     </Box>
