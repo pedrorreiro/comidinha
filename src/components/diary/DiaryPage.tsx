@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
   Flex,
+  Image,
   Input,
   Spinner,
   Text,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { CalendarDays, FileDown, Plus, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, FileDown, Plus, UserRound, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
 import { useDiary } from "@/hooks/useDiary";
@@ -30,6 +31,7 @@ import { TodaySummaryCard } from "./TodaySummaryCard";
 export function DiaryPage() {
   const palette = usePalette();
   const router = useRouter();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const { data, setMeal, ready } = useDiary();
   const [selectedYmd, setSelectedYmd] = useState(todayYmd);
   const [exportMonth, setExportMonth] = useState(() =>
@@ -39,17 +41,144 @@ export function DiaryPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const getErrorMessage = (error: unknown) => {
+    if (error instanceof Error && error.message.trim()) return error.message;
+    return "Erro inesperado.";
+  };
+
+  useEffect(() => {
+    const bootProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+      const displayName = String(user.user_metadata?.display_name ?? "").trim();
+      const imageUrl = String(user.user_metadata?.avatar_url ?? "").trim();
+      const imagePath = String(user.user_metadata?.avatar_path ?? "").trim();
+      setProfileName(displayName);
+      setProfileEmail(user.email ?? "");
+      setAvatarUrl(imageUrl || null);
+      setAvatarPath(imagePath || null);
+    };
+
+    void bootProfile();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (accountMenuRef.current?.contains(target)) return;
+      setAccountMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [accountMenuOpen]);
+
   const handleSignOut = useCallback(async () => {
     try {
-      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       router.replace("/auth");
       router.refresh();
-    } catch {
-      toast.error("Não foi possível sair agora.");
+    } catch (error) {
+      console.error("Erro ao sair da conta:", error);
+      toast.error(`Não foi possível sair agora. ${getErrorMessage(error)}`);
     }
-  }, [router]);
+  }, [router, supabase]);
+
+  const handleProfileSave = useCallback(async () => {
+    setProfileSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          display_name: profileName.trim(),
+          avatar_url: avatarUrl ?? null,
+          avatar_path: avatarPath ?? null,
+        },
+      });
+      if (error) throw error;
+      toast.success("Perfil atualizado.");
+      setProfileOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar perfil:", error);
+      toast.error(`Não foi possível salvar o perfil. ${getErrorMessage(error)}`);
+    } finally {
+      setProfileSaving(false);
+    }
+  }, [avatarPath, avatarUrl, profileName, supabase]);
+
+  const handleAvatarUpload = useCallback(
+    async (file: File) => {
+      setAvatarUploading(true);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("Sessão inválida");
+
+        const previousPath =
+          avatarPath ??
+          String(user.user_metadata?.avatar_path ?? "").trim() ??
+          "";
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const filePath = `${user.id}/avatar-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, file, {
+            upsert: true,
+            contentType: file.type,
+          });
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(filePath);
+
+        if (previousPath && previousPath !== filePath) {
+          const { error: removeError } = await supabase.storage
+            .from("avatars")
+            .remove([previousPath]);
+          if (removeError) {
+            // Não bloqueia o fluxo principal em caso de falha de remoção.
+            console.warn("Falha ao remover avatar antigo:", removeError.message);
+          }
+        }
+
+        const { error: metadataError } = await supabase.auth.updateUser({
+          data: {
+            avatar_url: publicData.publicUrl,
+            avatar_path: filePath,
+          },
+        });
+        if (metadataError) throw metadataError;
+
+        setAvatarPath(filePath);
+        setAvatarUrl(publicData.publicUrl);
+        toast.success("Foto enviada.");
+      } catch (error) {
+        console.error("Erro ao enviar foto de perfil:", error);
+        toast.error(
+          `Falha ao enviar foto. ${getErrorMessage(error)} Verifique o bucket 'avatars'.`,
+        );
+      } finally {
+        setAvatarUploading(false);
+      }
+    },
+    [avatarPath, supabase],
+  );
 
 
   const parts = useMemo(
@@ -99,15 +228,19 @@ export function DiaryPage() {
     }
     setExporting(true);
     try {
-      await downloadMonthlyPdf(year, month, data.days);
+      await downloadMonthlyPdf(year, month, data.days, {
+        name: profileName,
+        avatarUrl,
+      });
       toast.success("PDF gerado. Verifique sua pasta de downloads.");
       setExportOpen(false);
-    } catch {
-      toast.error("Não foi possível gerar o PDF. Tente de novo.");
+    } catch (error) {
+      console.error("Erro ao gerar PDF mensal:", error);
+      toast.error(`Não foi possível gerar o PDF. ${getErrorMessage(error)}`);
     } finally {
       setExporting(false);
     }
-  }, [data.days, exportMonth]);
+  }, [avatarUrl, data.days, exportMonth, profileName]);
 
   if (!ready) {
     return (
@@ -139,13 +272,13 @@ export function DiaryPage() {
       <Box
         as="header"
         position="relative"
-        zIndex={1}
+        zIndex={50}
         px={{ base: 3.5, sm: 5, md: 10 }}
         pt={{ base: 4, md: 8 }}
         pb={2}
       >
         <Flex justify="space-between" align="center" gap={3} flexWrap="wrap">
-          <Flex align="center" gap={3}>
+          <Flex align="center" gap={3} pr={{ base: "128px", md: 0 }}>
             <Flex
               align="center"
               justify="center"
@@ -182,11 +315,18 @@ export function DiaryPage() {
               </Text>
             </Box>
           </Flex>
-          <Flex align="center" gap={{ base: 1.5, md: 2 }}>
+          <Flex
+            align="center"
+            gap={{ base: 1.5, md: 2 }}
+            position={{ base: "absolute", md: "relative" }}
+            top={{ base: "14px", md: "auto" }}
+            right={{ base: "14px", md: "auto" }}
+          >
             <Button
               size={{ base: "xs", md: "sm" }}
               borderRadius="lg"
               gap={2}
+              justifyContent="center"
               onClick={() => setExportOpen(true)}
               bg={palette.navActive}
               color={palette.text}
@@ -196,22 +336,92 @@ export function DiaryPage() {
                 bg: palette.navHover,
                 borderColor: palette.borderGlow,
               }}
+              minW={{ base: "34px", md: "auto" }}
+              w={{ base: "34px", md: "auto" }}
+              h={{ base: "34px", md: "36px" }}
+              px={{ base: 0, md: 3 }}
+              fontWeight={{ base: "normal", md: "semibold" }}
             >
               <FileDown size={16} strokeWidth={1.75} />
-              Exportar PDF
+              <Text display={{ base: "none", md: "inline" }}>Exportar PDF</Text>
             </Button>
             <Button
               size="sm"
               variant="outline"
-              borderRadius="lg"
+              borderRadius="full"
               borderColor={palette.border}
               color={palette.text}
               _hover={{ bg: palette.navHover }}
-              onClick={() => void handleSignOut()}
+              onClick={() => setAccountMenuOpen((prev) => !prev)}
+              p={0}
+              minW={{ base: "34px", md: "38px" }}
+              w={{ base: "34px", md: "38px" }}
+              h={{ base: "34px", md: "38px" }}
+              overflow="hidden"
             >
-              Sair
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt="Foto de perfil"
+                  w="100%"
+                  h="100%"
+                  objectFit="cover"
+                />
+              ) : (
+                <Flex align="center" justify="center" w="100%" h="100%">
+                  <UserRound size={16} />
+                </Flex>
+              )}
             </Button>
             <ThemeToggle />
+            {accountMenuOpen && (
+              <Box
+                ref={accountMenuRef}
+                position="absolute"
+                top={{ base: "40px", md: "44px" }}
+                right={0}
+                zIndex={9999}
+                bg={palette.surface}
+                borderWidth="1px"
+                borderColor={palette.border}
+                borderRadius="xl"
+                boxShadow={palette.cardShadow}
+                p={3}
+                minW="220px"
+              >
+                <Text fontSize="xs" color={palette.textMuted} mb={2}>
+                  {profileEmail || "Sem e-mail"}
+                </Text>
+                <Flex direction="column" gap={2}>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    borderRadius="lg"
+                    borderColor={palette.border}
+                    color={palette.text}
+                    _hover={{ bg: palette.navHover }}
+                    onClick={() => {
+                      setProfileOpen(true);
+                      setAccountMenuOpen(false);
+                    }}
+                  >
+                    Editar perfil
+                  </Button>
+                  <Button
+                    size="xs"
+                    borderRadius="lg"
+                    bg={palette.navActive}
+                    color={palette.text}
+                    borderWidth="1px"
+                    borderColor={palette.navActiveBorder}
+                    _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
+                    onClick={() => void handleSignOut()}
+                  >
+                    Sair
+                  </Button>
+                </Flex>
+              </Box>
+            )}
           </Flex>
         </Flex>
       </Box>
@@ -372,6 +582,132 @@ export function DiaryPage() {
         </Box>
       )}
 
+      {profileOpen && (
+        <Box
+          position="fixed"
+          inset={0}
+          zIndex={35}
+          bg={palette.backdrop}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          px={4}
+          onClick={() => setProfileOpen(false)}
+        >
+          <Box
+            w="100%"
+            maxW="420px"
+            bg={palette.surface}
+            borderWidth="1px"
+            borderColor={palette.border}
+            borderRadius="2xl"
+            boxShadow={palette.modalShadow}
+            p={5}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Text fontSize="md" fontWeight="semibold" color={palette.text} mb={1}>
+              Meu perfil
+            </Text>
+            <Text fontSize="sm" color={palette.fgSubtle} mb={4}>
+              Defina seu nome e foto de perfil.
+            </Text>
+
+            <Flex align="center" gap={3} mb={4}>
+              <Flex
+                w="56px"
+                h="56px"
+                borderRadius="full"
+                overflow="hidden"
+                borderWidth="1px"
+                borderColor={palette.border}
+                bg={palette.surfaceSoft}
+                align="center"
+                justify="center"
+                flexShrink={0}
+              >
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt="Avatar"
+                    w="100%"
+                    h="100%"
+                    objectFit="cover"
+                  />
+                ) : (
+                  <UserRound size={22} />
+                )}
+              </Flex>
+              <Button
+                as="label"
+                size="sm"
+                borderRadius="lg"
+                variant="outline"
+                borderColor={palette.border}
+                color={palette.text}
+                _hover={{ bg: palette.navHover }}
+                loading={avatarUploading}
+              >
+                Enviar foto
+                <Input
+                  type="file"
+                  accept="image/*"
+                  display="none"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleAvatarUpload(file);
+                    e.currentTarget.value = "";
+                  }}
+                />
+              </Button>
+            </Flex>
+
+            <Text fontSize="xs" color={palette.textMuted} mb={1}>
+              Nome
+            </Text>
+            <Input
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+              placeholder="Seu nome"
+              borderRadius="lg"
+              size="sm"
+              mb={4}
+            />
+
+            <Text fontSize="xs" color={palette.textMuted} mb={1}>
+              E-mail
+            </Text>
+            <Input value={profileEmail} size="sm" borderRadius="lg" mb={5} disabled />
+
+            <Flex justify="flex-end" gap={2}>
+              <Button
+                size="sm"
+                variant="outline"
+                borderRadius="lg"
+                borderColor={palette.border}
+                color={palette.text}
+                _hover={{ bg: palette.navHover }}
+                onClick={() => setProfileOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                borderRadius="lg"
+                bg={palette.navActive}
+                color={palette.text}
+                borderWidth="1px"
+                borderColor={palette.navActiveBorder}
+                _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
+                onClick={() => void handleProfileSave()}
+                loading={profileSaving}
+              >
+                Salvar
+              </Button>
+            </Flex>
+          </Box>
+        </Box>
+      )}
+
       {exportOpen && (
         <Box
           position="fixed"
@@ -421,18 +757,7 @@ export function DiaryPage() {
               type="month"
               value={exportMonth}
               onChange={(e) => setExportMonth(e.target.value)}
-              onClick={(e) => {
-                const input = e.currentTarget as HTMLInputElement & {
-                  showPicker?: () => void;
-                };
-                input.showPicker?.();
-              }}
-              onFocus={(e) => {
-                const input = e.currentTarget as HTMLInputElement & {
-                  showPicker?: () => void;
-                };
-                input.showPicker?.();
-              }}
+              lang="pt-BR"
               size="sm"
               borderRadius="lg"
               mb={5}
