@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Box, Button, Flex, Input, SimpleGrid, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import type { LucideIcon } from "lucide-react";
 import {
   Check,
@@ -616,14 +616,58 @@ export function TodaySummaryCard({
         })()}
       </Box>
 
-      {/* Desktop: grid de cards (escondido no mobile) */}
-      <SimpleGrid
-        display={{ base: "none", md: "grid" }}
-        columns={{ md: 2, xl: 3 }}
-        columnGap={4}
-        rowGap={4}
-      >
-        {MEAL_SLOTS.map((slot) => {
+      {/* Desktop: tab navigation maior + painel único */}
+      <Box display={{ base: "none", md: "block" }}>
+        <Flex
+          gap={2}
+          mb={5}
+          p={1.5}
+          borderRadius="xl"
+          bg={palette.surface}
+          borderWidth="1px"
+          borderColor={palette.border}
+        >
+          {MEAL_SLOTS.map((slot) => {
+            const slotContent = (values[slot.id] ?? "").trim();
+            const slotParsed = slotContent ? parseMealText(slotContent) : null;
+            const hasMeals = slotParsed ? slotParsed.items.length > 0 : false;
+            const slotMood = slotParsed
+              ? MOOD_OPTIONS.find((o) => o.value === slotParsed.mood) ?? MOOD_OPTIONS[3]
+              : null;
+            const isActiveTab = activeMobileSlot === slot.id;
+            const Icon = SLOT_ICONS[slot.id];
+
+            return (
+              <Button
+                key={slot.id}
+                flex="1"
+                h="54px"
+                borderRadius="lg"
+                variant="ghost"
+                onClick={() => switchMobileSlot(slot.id)}
+                bg={isActiveTab ? palette.navActive : "transparent"}
+                borderWidth="1px"
+                borderColor={isActiveTab ? palette.navActiveBorder : "transparent"}
+                color={isActiveTab ? palette.text : palette.textMuted}
+                _hover={{ bg: palette.navHover, color: palette.text }}
+                gap={2}
+              >
+                <Icon size={18} strokeWidth={isActiveTab ? 2 : 1.7} />
+                <Text fontSize="sm" fontWeight={isActiveTab ? "semibold" : "medium"}>
+                  {MOBILE_TAB_LABELS[slot.id]}
+                </Text>
+                {hasMeals && slotMood && (
+                  <Text as="span" fontSize="sm" lineHeight="1">
+                    {slotMood.emoji}
+                  </Text>
+                )}
+              </Button>
+            );
+          })}
+        </Flex>
+
+        {(() => {
+          const slot = MEAL_SLOTS.find((s) => s.id === activeMobileSlot)!;
           const content = (values[slot.id] ?? "").trim();
           const parsed = parseMealText(content);
           const moodMeta =
@@ -633,36 +677,29 @@ export function TodaySummaryCard({
 
           return (
             <Box
-              key={slot.id}
-              p={4}
+              p={5}
               borderRadius="xl"
               bg={palette.surface}
               borderWidth="1px"
               borderColor={palette.border}
               boxShadow={palette.cardShadow}
             >
-              <Flex justify="space-between" align="center" mb={3} gap={2}>
-                <Text
-                  fontSize="xs"
-                  fontWeight="semibold"
-                  textTransform="uppercase"
-                  letterSpacing="0.06em"
-                  color={palette.textMuted}
-                >
-                  {slot.shortLabel}
+              <Flex justify="space-between" align="center" mb={4} gap={2}>
+                <Text fontSize="lg" fontWeight="semibold" color={palette.text}>
+                  {slot.label}
                 </Text>
                 <Flex
                   align="center"
-                  gap={1.5}
+                  gap={2}
                   position="relative"
                   ref={moodPickerSlot === slot.id ? moodPopoverDesktopRef : null}
                 >
                   <Button
-                    size="2xs"
+                    size="sm"
                     variant="outline"
                     borderRadius="full"
-                    minW="36px"
-                    h="30px"
+                    minW="44px"
+                    h="36px"
                     px={2}
                     bg={palette.surface}
                     borderColor={palette.border}
@@ -675,34 +712,34 @@ export function TodaySummaryCard({
                     }
                     aria-label={`Alterar satisfação de ${slot.label}`}
                   >
-                    <Text as="span" fontSize="lg" lineHeight="1">
+                    <Text as="span" fontSize="xl" lineHeight="1">
                       {moodMeta.emoji}
                     </Text>
                   </Button>
                   {moodPickerSlot === slot.id && (
                     <Box
                       position="absolute"
-                      top="36px"
+                      top="42px"
                       right="0"
                       zIndex={3}
-                      p={1.5}
+                      p={2}
                       borderRadius="xl"
                       bg={palette.surface}
                       borderWidth="1px"
                       borderColor={palette.border}
                       boxShadow={palette.cardShadow}
                     >
-                      <Flex gap={1} align="center">
+                      <Flex gap={1.5} align="center">
                         {MOOD_OPTIONS.map((option) => {
                           const isActive = option.value === moodMeta.value;
                           return (
                             <Button
                               key={option.value}
-                              size="2xs"
+                              size="sm"
                               variant={isActive ? "solid" : "ghost"}
                               borderRadius="full"
-                              minW="34px"
-                              h="30px"
+                              minW="40px"
+                              h="36px"
                               p={0}
                               bg={isActive ? palette.navActive : "transparent"}
                               color={isActive ? palette.text : palette.textMuted}
@@ -710,7 +747,7 @@ export function TodaySummaryCard({
                               onClick={() => saveMoodFromHeader(slot.id, option.value)}
                               aria-label={`Definir satisfação ${option.label}`}
                             >
-                              <Text as="span" fontSize="lg" lineHeight="1">
+                              <Text as="span" fontSize="xl" lineHeight="1">
                                 {option.emoji}
                               </Text>
                             </Button>
@@ -720,41 +757,47 @@ export function TodaySummaryCard({
                     </Box>
                   )}
                   <Button
-                    size="2xs"
+                    size="sm"
                     variant="ghost"
                     borderRadius="md"
-                    minW="auto"
-                    px={2}
-                    h="26px"
+                    minW="40px"
+                    h="36px"
                     color={palette.textMuted}
                     _hover={{ bg: palette.navHover, color: palette.text }}
-                    onClick={() => isEditing ? closeEdit() : startEdit(slot.id)}
-                    aria-label={isEditing ? `Parar edição de ${slot.label}` : `Editar ${slot.label}`}
+                    onClick={() => (isEditing ? closeEdit() : startEdit(slot.id))}
+                    aria-label={
+                      isEditing
+                        ? `Parar edição de ${slot.label}`
+                        : `Editar ${slot.label}`
+                    }
                   >
-                    {isEditing ? <Check size={13} /> : <PencilLine size={13} />}
+                    {isEditing ? <Check size={16} /> : <PencilLine size={16} />}
                   </Button>
                 </Flex>
               </Flex>
 
               {isEditing ? (
                 <Box>
-                  <Flex gap={2} mb={2.5} align="center">
+                  <Flex gap={2} mb={3} align="center">
                     <Input
                       ref={itemInputRef}
                       value={itemDraft}
                       onChange={(e) => setItemDraft(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") { e.preventDefault(); addItem(); }
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addItem();
+                        }
                       }}
                       placeholder="Adicionar item da refeição"
-                      size="sm"
+                      size="md"
                       borderRadius="lg"
                       fontSize="sm"
                       borderColor={palette.border}
                       _focusVisible={{ borderColor: palette.borderGlow, boxShadow: "none" }}
                     />
                     <Button
-                      size="xs"
+                      size="sm"
                       borderRadius="lg"
                       onClick={addItem}
                       disabled={!itemDraft.trim()}
@@ -764,13 +807,13 @@ export function TodaySummaryCard({
                       borderColor={palette.navActiveBorder}
                       _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
                     >
-                      <Plus size={14} />
+                      <Plus size={15} />
                       Adicionar
                     </Button>
                   </Flex>
 
                   {items.length > 0 && (
-                    <Text fontSize="xs" color={palette.textMuted} mb={2}>
+                    <Text fontSize="sm" color={palette.textMuted} mb={2}>
                       Itens: {items.length}
                     </Text>
                   )}
@@ -782,7 +825,7 @@ export function TodaySummaryCard({
                       bg={palette.surface}
                       borderWidth="1px"
                       borderColor={palette.border}
-                      mb={3}
+                      mb={1}
                     >
                       <Flex direction="column" gap={2.5}>
                         {items.map((item, idx) => (
@@ -791,7 +834,7 @@ export function TodaySummaryCard({
                             justify="space-between"
                             align="center"
                             gap={2}
-                            p={2}
+                            p={2.5}
                             borderRadius="md"
                             bg={palette.panelMuted}
                             borderWidth="1px"
@@ -802,14 +845,17 @@ export function TodaySummaryCard({
                                 value={editDraft}
                                 onChange={(e) => setEditDraft(e.target.value)}
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter") { e.preventDefault(); saveItemEdit(); }
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    saveItemEdit();
+                                  }
                                 }}
-                                size="xs"
+                                size="sm"
                                 borderRadius="md"
                                 bg={palette.surface}
                               />
                             ) : (
-                              <Text fontSize="sm" color={palette.text} lineHeight="1.4">
+                              <Text fontSize="sm" color={palette.text} lineHeight="1.45">
                                 {item}
                               </Text>
                             )}
@@ -843,34 +889,29 @@ export function TodaySummaryCard({
               ) : (
                 <Box>
                   {content ? (
-                    <Flex direction="column" gap={2}>
+                    <Flex direction="column" gap={2.5}>
                       {parsed.items.map((item, idx) => (
-                        <Box
-                          key={`${slot.id}-${idx}-${item}`}
-                          px={2.5}
-                          py={1.5}
-                          borderRadius="md"
-                          bg={palette.surface}
-                          borderWidth="1px"
-                          borderColor={palette.border}
-                        >
-                          <Text fontSize="sm" color={palette.text} lineHeight="1.45">
+                        <Flex key={`${slot.id}-${idx}-${item}`} align="baseline" gap={2}>
+                          <Text as="span" fontSize="sm" color={palette.textMuted} flexShrink={0}>
+                            ·
+                          </Text>
+                          <Text fontSize="md" color={palette.text} lineHeight="1.55">
                             {item}
                           </Text>
-                        </Box>
+                        </Flex>
                       ))}
                     </Flex>
                   ) : (
-                    <Text fontSize="sm" color={palette.textMuted}>
-                      — Nada registrado
+                    <Text fontSize="md" color={palette.textMuted}>
+                      Nada registrado
                     </Text>
                   )}
                 </Box>
               )}
             </Box>
           );
-        })}
-      </SimpleGrid>
+        })()}
+      </Box>
     </Box>
   );
 }
