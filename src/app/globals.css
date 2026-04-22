@@ -70,18 +70,6 @@ html.light .landing-band {
   background-color: rgba(255, 255, 255, 0.55);
 }
 
-/* ── Driver.js tour: libera interação em portais (ex: popover de humor) ── */
-/*
- * O driver.js bloqueia pointer-events em tudo, exceto no elemento ativo.
- * Popovers do Chakra UI são renderizados em portais fora da árvore do elemento
- * destacado, então ficam bloqueados. Liberamos esses portais explicitamente.
- */
-.driver-active [data-popper-placement],
-.driver-active [role="dialog"],
-.driver-active [data-radix-popper-content-wrapper] {
-  pointer-events: auto !important;
-}
-
 /* ── Driver.js tour popover ─────────────────────────────────── */
 /*
  * O driver.js injeta seu CSS via JS em runtime, depois do nosso globals.css,

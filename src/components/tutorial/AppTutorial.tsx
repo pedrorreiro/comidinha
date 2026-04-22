@@ -101,8 +101,8 @@ function buildDriver(onDone: () => void): Driver {
           title: "📅 Navegar por datas",
           description:
             "Acesse o calendário para consultar ou preencher refeições de outros dias.",
-          side: "bottom",
-          align: "end",
+          side: "right",
+          align: "start",
         },
       },
       {

@@ -697,6 +697,7 @@ export function TodaySummaryCard({
                   gap={2}
                   position="relative"
                   ref={moodPickerSlot === slot.id ? moodPopoverDesktopRef : null}
+                  data-tutorial="meal-mood-btn"
                 >
                   <Button
                     size="sm"
@@ -715,7 +716,6 @@ export function TodaySummaryCard({
                       )
                     }
                     aria-label={`Alterar satisfação de ${slot.label}`}
-                    data-tutorial="meal-mood-btn"
                   >
                     <Text as="span" fontSize="xl" lineHeight="1">
                       {moodMeta.emoji}

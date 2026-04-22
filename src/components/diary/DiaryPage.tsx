@@ -521,6 +521,7 @@ export function DiaryPage() {
             display={{ base: "none", lg: "block" }}
             position={{ base: "static", lg: "sticky" }}
             top={{ lg: "16px" }}
+            data-tutorial="calendar-btn"
           >
             <InlineCalendar
               selectedYmd={selectedYmd}
