@@ -12,7 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { CalendarDays, FileDown, Plus, UserRound } from "lucide-react";
+import { CalendarDays, FileDown, Plus, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
 import { useDiary } from "@/hooks/useDiary";
@@ -320,28 +320,43 @@ export function DiaryPage() {
             top={{ base: "14px", md: "auto" }}
             right={{ base: "14px", md: "auto" }}
           >
+            {/* Calendário no header — só mobile */}
             <Button
-              size={{ base: "xs", md: "sm" }}
+              display={{ base: "inline-flex", lg: "none" }}
+              size="xs"
+              borderRadius="lg"
+              onClick={() => setMobileCalendarOpen(true)}
+              bg={palette.navActive}
+              color={palette.text}
+              borderWidth="1px"
+              borderColor={palette.navActiveBorder}
+              _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
+              minW="34px"
+              w="34px"
+              h="34px"
+              p={0}
+              aria-label="Abrir calendário"
+            >
+              <CalendarDays size={16} strokeWidth={1.75} />
+            </Button>
+            {/* Exportar PDF — só desktop, no header */}
+            <Button
+              display={{ base: "none", md: "inline-flex" }}
+              size="sm"
               borderRadius="lg"
               gap={2}
-              justifyContent="center"
               onClick={() => setExportOpen(true)}
               bg={palette.navActive}
               color={palette.text}
               borderWidth="1px"
               borderColor={palette.navActiveBorder}
-              _hover={{
-                bg: palette.navHover,
-                borderColor: palette.borderGlow,
-              }}
-              minW={{ base: "34px", md: "auto" }}
-              w={{ base: "34px", md: "auto" }}
-              h={{ base: "34px", md: "36px" }}
-              px={{ base: 0, md: 3 }}
-              fontWeight={{ base: "normal", md: "semibold" }}
+              _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
+              h="36px"
+              px={3}
+              fontWeight="semibold"
             >
               <FileDown size={16} strokeWidth={1.75} />
-              <Text display={{ base: "none", md: "inline" }}>Exportar PDF</Text>
+              Exportar PDF
             </Button>
             <Button
               size="sm"
@@ -404,6 +419,23 @@ export function DiaryPage() {
                     }}
                   >
                     Editar perfil
+                  </Button>
+                  <Button
+                    display={{ base: "inline-flex", md: "none" }}
+                    size="xs"
+                    variant="outline"
+                    borderRadius="lg"
+                    gap={1.5}
+                    borderColor={palette.border}
+                    color={palette.text}
+                    _hover={{ bg: palette.navHover }}
+                    onClick={() => {
+                      setExportOpen(true);
+                      setAccountMenuOpen(false);
+                    }}
+                  >
+                    <FileDown size={13} strokeWidth={1.75} />
+                    Exportar PDF
                   </Button>
                   <Button
                     size="xs"
@@ -482,28 +514,6 @@ export function DiaryPage() {
       </Box>
 
       <Button
-        display={{ base: "inline-flex", lg: "none" }}
-        position="fixed"
-        right={{ base: 4, md: 8 }}
-        bottom={{ base: 20, md: 26 }}
-        zIndex={25}
-        w="52px"
-        h="52px"
-        borderRadius="full"
-        p={0}
-        onClick={() => setMobileCalendarOpen(true)}
-        bg={palette.surfaceSoft}
-        color={palette.text}
-        borderWidth="1px"
-        borderColor={palette.border}
-        boxShadow={palette.cardShadow}
-        _hover={{ bg: palette.navHover, borderColor: palette.borderGlow }}
-        aria-label="Abrir calendário"
-      >
-        <CalendarDays size={22} strokeWidth={2} />
-      </Button>
-
-      <Button
         position="fixed"
         right={{ base: 4, md: 8 }}
         bottom={{ base: 4, md: 8 }}
@@ -565,10 +575,30 @@ export function DiaryPage() {
           onClick={() => setMobileCalendarOpen(false)}
         >
           <Box
+            position="relative"
             w="100%"
             maxW="420px"
             onClick={(e) => e.stopPropagation()}
           >
+            <Button
+              position="absolute"
+              top={2}
+              right={2}
+              zIndex={2}
+              size="xs"
+              variant="ghost"
+              borderRadius="full"
+              minW="30px"
+              w="30px"
+              h="30px"
+              p={0}
+              color={palette.textMuted}
+              _hover={{ bg: palette.navHover, color: palette.text }}
+              onClick={() => setMobileCalendarOpen(false)}
+              aria-label="Fechar calendário"
+            >
+              <X size={16} />
+            </Button>
             <InlineCalendar
               selectedYmd={selectedYmd}
               onSelectDate={(ymd) => {
