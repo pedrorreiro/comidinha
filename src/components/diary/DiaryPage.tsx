@@ -12,7 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { CalendarDays, FileDown, Plus, UserRound, X } from "lucide-react";
+import { BookOpen, CalendarDays, FileDown, Plus, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
 import { useDiary } from "@/hooks/useDiary";
@@ -21,6 +21,10 @@ import { downloadMonthlyPdf } from "@/lib/pdf/download-monthly-pdf";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { usePalette } from "@/theme/ThemePaletteContext";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import {
+  AppTutorial,
+  type AppTutorialRef,
+} from "@/components/tutorial/AppTutorial";
 import { DiaryBackground } from "./DiaryBackground";
 import { DayToolbar } from "./DayToolbar";
 import { dateToMonthInput } from "./ExportMonthBar";
@@ -51,11 +55,26 @@ export function DiaryPage() {
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const tutorialRef = useRef<AppTutorialRef | null>(null);
+  const [runTutorial, setRunTutorial] = useState(false);
 
   const getErrorMessage = (error: unknown) => {
     if (error instanceof Error && error.message.trim()) return error.message;
     return "Erro inesperado.";
   };
+
+  const TUTORIAL_KEY = "sabre_tutorial_v1_seen";
+
+  useEffect(() => {
+    if (localStorage.getItem(TUTORIAL_KEY) !== "true") {
+      setRunTutorial(true);
+    }
+  }, []);
+
+  const handleTutorialDone = useCallback(() => {
+    localStorage.setItem(TUTORIAL_KEY, "true");
+    setRunTutorial(false);
+  }, []);
 
   useEffect(() => {
     const bootProfile = async () => {
@@ -270,6 +289,7 @@ export function DiaryPage() {
       direction="column"
     >
       <DiaryBackground />
+      <AppTutorial ref={tutorialRef} run={runTutorial} onDone={handleTutorialDone} />
       <Box
         as="header"
         position="relative"
@@ -336,6 +356,7 @@ export function DiaryPage() {
               h="34px"
               p={0}
               aria-label="Abrir calendário"
+              data-tutorial="calendar-btn"
             >
               <CalendarDays size={16} strokeWidth={1.75} />
             </Button>
@@ -371,6 +392,7 @@ export function DiaryPage() {
               w={{ base: "34px", md: "38px" }}
               h={{ base: "34px", md: "38px" }}
               overflow="hidden"
+              data-tutorial="profile-btn"
             >
               {avatarUrl ? (
                 <Image
@@ -433,9 +455,26 @@ export function DiaryPage() {
                       setExportOpen(true);
                       setAccountMenuOpen(false);
                     }}
+                    data-tutorial="export-btn"
                   >
                     <FileDown size={13} strokeWidth={1.75} />
                     Exportar PDF
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    borderRadius="lg"
+                    gap={1.5}
+                    borderColor={palette.border}
+                    color={palette.text}
+                    _hover={{ bg: palette.navHover }}
+                    onClick={() => {
+                      setAccountMenuOpen(false);
+                      tutorialRef.current?.start();
+                    }}
+                  >
+                    <BookOpen size={13} strokeWidth={1.75} />
+                    Ver tour
                   </Button>
                   <Button
                     size="xs"
@@ -523,6 +562,7 @@ export function DiaryPage() {
         borderRadius="full"
         p={0}
         onClick={() => setQuickAddOpen(true)}
+        data-tutorial="quick-add-btn"
         bg="#ffffff"
         color="#0f172a"
         borderWidth="1px"

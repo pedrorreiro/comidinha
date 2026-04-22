@@ -289,6 +289,7 @@ export function TodaySummaryCard({
           mb={6}
           borderBottomWidth="1px"
           borderColor={palette.border}
+          data-tutorial="meal-tabs"
         >
           {MEAL_SLOTS.map((slot) => {
             const slotContent = (values[slot.id] ?? "").trim();
@@ -373,6 +374,7 @@ export function TodaySummaryCard({
                   gap={2}
                   position="relative"
                   ref={moodPickerSlot === slot.id ? moodPopoverMobileRef : null}
+                  data-tutorial="meal-mood-btn"
                 >
                   <Button
                     size="2xs"
@@ -448,6 +450,7 @@ export function TodaySummaryCard({
                         ? `Parar edição de ${slot.label}`
                         : `Editar ${slot.label}`
                     }
+                    data-tutorial="meal-edit-btn"
                   >
                     {isEditing ? <Check size={15} /> : <PencilLine size={15} />}
                   </Button>
@@ -626,6 +629,7 @@ export function TodaySummaryCard({
           bg={palette.surface}
           borderWidth="1px"
           borderColor={palette.border}
+          data-tutorial="meal-tabs"
         >
           {MEAL_SLOTS.map((slot) => {
             const slotContent = (values[slot.id] ?? "").trim();
@@ -711,6 +715,7 @@ export function TodaySummaryCard({
                       )
                     }
                     aria-label={`Alterar satisfação de ${slot.label}`}
+                    data-tutorial="meal-mood-btn"
                   >
                     <Text as="span" fontSize="xl" lineHeight="1">
                       {moodMeta.emoji}
@@ -770,6 +775,7 @@ export function TodaySummaryCard({
                         ? `Parar edição de ${slot.label}`
                         : `Editar ${slot.label}`
                     }
+                    data-tutorial="meal-edit-btn"
                   >
                     {isEditing ? <Check size={16} /> : <PencilLine size={16} />}
                   </Button>
