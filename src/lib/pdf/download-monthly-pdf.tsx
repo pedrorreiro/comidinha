@@ -182,32 +182,38 @@ export async function downloadMonthlyPdf(
       const dayNum = Number(ymd.slice(8, 10));
       const dayTitle = longDatePt(year, month, dayNum);
       const dayTitleCap = dayTitle.charAt(0).toUpperCase() + dayTitle.slice(1);
-      const rawRows = MEAL_SLOTS.flatMap((slot) => {
+      const rows = MEAL_SLOTS.flatMap((slot) => {
         const slotEntries = entries[ymd]?.[slot.id] ?? [];
         if (slotEntries.length > 0) {
-          return slotEntries.map((entry) => ({
-            slot: slot.label,
-            food: entry.brandName
+          const foods = slotEntries.map((entry) => {
+            const name = entry.brandName
               ? `${entry.foodName} (${entry.brandName})`
-              : entry.foodName,
-            portion: entry.portionDescription ?? "—",
-            calories:
-              typeof entry.calories === "number"
-                ? `${Math.round(entry.calories)} kcal`
-                : "—",
-          }));
+              : entry.foodName;
+            return `• ${name}`;
+          });
+          const portions = slotEntries.map((entry) => `• ${entry.portionDescription ?? "—"}`);
+          const calories = slotEntries.map((entry) =>
+            `• ${typeof entry.calories === "number" ? `${Math.round(entry.calories)} kcal` : "—"}`,
+          );
+
+          return [{
+            slot: slot.label,
+            food: foods.join("\n"),
+            portion: portions.join("\n"),
+            calories: calories.join("\n"),
+          }];
         }
 
         const content = normalizeSlotContent(days[ymd]?.[slot.id]);
         if (content === "—") return [];
 
-        return [{ slot: slot.label, food: content, portion: "—", calories: "—" }];
+        return [{
+          slot: slot.label,
+          food: content,
+          portion: "• —",
+          calories: "• —",
+        }];
       });
-      const rows = rawRows.map((row, idx) => ({
-        ...row,
-        // Agrupa visualmente por refeição: exibe o rótulo apenas na primeira linha do bloco.
-        slot: idx > 0 && rawRows[idx - 1]?.slot === row.slot ? "" : row.slot,
-      }));
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
