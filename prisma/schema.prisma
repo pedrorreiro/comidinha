@@ -8,14 +8,22 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model DiaryMeal {
-  userId    String   @map("user_id") @db.Uuid
-  dateYmd   String   @map("date_ymd")
-  slot      String
-  content   String
-  updatedAt DateTime @map("updated_at") @db.Timestamptz(6)
+model DiaryFoodEntry {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  dateYmd            String   @map("date_ymd")
+  slot               String
+  moodScore          Int?     @map("mood_score")
+  sortOrder          Int      @map("sort_order")
+  foodName           String   @map("food_name")
+  brandName          String?  @map("brand_name")
+  portionDescription String?  @map("portion_description")
+  calories           Float?
+  fatSecretFoodId    String?  @map("fatsecret_food_id")
+  fatSecretServingId String?  @map("fatsecret_serving_id")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @map("updated_at") @db.Timestamptz(6)
 
-  @@id([userId, dateYmd, slot])
-  @@index([userId, dateYmd], map: "idx_diary_meals_user_date")
-  @@map("diary_meals")
+  @@index([userId, dateYmd, slot, sortOrder], map: "idx_diary_food_entries_user_date_slot")
+  @@map("diary_food_entries")
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState, startTransition } from "react";
+import { parseFoodEntriesFromText } from "@/lib/diary-food-entry-parser";
+import { parseMoodFromText } from "@/lib/diary-mood";
 import type { DiaryData, MealSlotId } from "@/types/diary";
 
-const empty: DiaryData = { v: 1, days: {} };
+const empty: DiaryData = { v: 1, days: {}, entries: {}, moods: {} };
 
 export function useDiary() {
   const [data, setData] = useState<DiaryData>(empty);
@@ -22,7 +24,7 @@ export function useDiary() {
         if (!active) return;
 
         startTransition(() => {
-          setData(remote);
+          setData({ ...remote, entries: remote.entries ?? {}, moods: remote.moods ?? {} });
           setReady(true);
         });
       } catch {
@@ -62,7 +64,48 @@ export function useDiary() {
           nextDays[dateYmd] = nextDay;
         }
 
-        return { ...prev, days: nextDays };
+        const nextEntries = { ...prev.entries };
+        const prevEntryDay = prev.entries[dateYmd] ?? {};
+        const nextEntryDay = { ...prevEntryDay };
+        const parsedEntries = parseFoodEntriesFromText(dateYmd, slot, normalized);
+        const parsedMood = parseMoodFromText(normalized);
+
+        if (parsedEntries.length === 0) {
+          delete nextEntryDay[slot];
+        } else {
+          nextEntryDay[slot] = parsedEntries.map((entry) => ({
+            id: `optimistic-${dateYmd}-${slot}-${entry.sortOrder}`,
+            foodName: entry.foodName,
+            brandName: entry.brandName,
+            portionDescription: entry.portionDescription,
+            calories: entry.calories,
+            moodScore: parsedMood,
+          }));
+        }
+
+        if (Object.keys(nextEntryDay).length === 0) {
+          delete nextEntries[dateYmd];
+        } else {
+          nextEntries[dateYmd] = nextEntryDay;
+        }
+
+        const nextMoods = { ...prev.moods };
+        const prevMoodDay = prev.moods[dateYmd] ?? {};
+        const nextMoodDay = { ...prevMoodDay };
+
+        if (typeof parsedMood === "number") {
+          nextMoodDay[slot] = parsedMood;
+        } else {
+          delete nextMoodDay[slot];
+        }
+
+        if (Object.keys(nextMoodDay).length === 0) {
+          delete nextMoods[dateYmd];
+        } else {
+          nextMoods[dateYmd] = nextMoodDay;
+        }
+
+        return { ...prev, days: nextDays, entries: nextEntries, moods: nextMoods };
       });
 
       void fetch("/api/diary", {

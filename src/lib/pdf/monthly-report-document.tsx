@@ -10,12 +10,13 @@ import {
   hasAnyMealInDay,
   monthTitleCapPt,
 } from "@/lib/pdf/monthly-report-utils";
-import type { MealSlotId } from "@/types/diary";
+import type { DiaryFoodEntry, MealSlotId } from "@/types/diary";
 
 export type MonthlyReportDocumentProps = {
   year: number;
   month: number;
   days: Record<string, Partial<Record<MealSlotId, string>>>;
+  entries?: Record<string, Partial<Record<MealSlotId, DiaryFoodEntry[]>>>;
   profileName?: string;
   profileAvatarUrl?: string | null;
 };
@@ -24,6 +25,7 @@ export function MonthlyReportDocument({
   year,
   month,
   days,
+  entries = {},
   profileName,
   profileAvatarUrl,
 }: MonthlyReportDocumentProps) {
@@ -33,7 +35,8 @@ export function MonthlyReportDocument({
   );
   const filledYmdList = ymdList.filter((ymd) => {
     const dayData = days[ymd];
-    return hasAnyMealInDay(dayData);
+    const dayEntries = entries[ymd];
+    return hasAnyMealInDay(dayData, dayEntries);
   });
   const dayChunks = chunk(filledYmdList, 3);
   const monthTitle = monthTitleCapPt(year, month);
@@ -80,15 +83,25 @@ export function MonthlyReportDocument({
               const dayTitle = longDatePt(year, month, dayNum);
               const dayTitleCap =
                 dayTitle.charAt(0).toUpperCase() + dayTitle.slice(1);
+              const rows = filledSlotsOfDay(dayData, entries[ymd]).map(
+                ({ slot, content, entry }, idx) => ({
+                  id: entry ? `${slot.id}-${entry.id}` : `${slot.id}-${idx}`,
+                  label: slot.label,
+                  content,
+                  portion: entry?.portionDescription,
+                  calories: entry?.calories,
+                }),
+              );
+              const groupedRows = rows.map((row, idx) => ({
+                ...row,
+                label: idx > 0 && rows[idx - 1]?.label === row.label ? "" : row.label,
+              }));
+
               return (
                 <DayMealsTable
                   key={ymd}
                   dayTitle={dayTitleCap}
-                  rows={filledSlotsOfDay(dayData).map(({ slot, content }) => ({
-                    id: slot.id,
-                    label: slot.label,
-                    content,
-                  }))}
+                  rows={groupedRows}
                 />
               );
             })}

@@ -29,6 +29,7 @@ import { DiaryBackground } from "./DiaryBackground";
 import { DayToolbar } from "./DayToolbar";
 import { dateToMonthInput } from "./ExportMonthBar";
 import { InlineCalendar } from "./InlineCalendar";
+import { MonthInsightsCard } from "./MonthInsightsCard";
 import { QuickMealEntry } from "./QuickMealEntry";
 import { TodaySummaryCard } from "./TodaySummaryCard";
 
@@ -66,9 +67,13 @@ export function DiaryPage() {
   const TUTORIAL_KEY = "sabre_tutorial_v1_seen";
 
   useEffect(() => {
-    if (localStorage.getItem(TUTORIAL_KEY) !== "true") {
-      setRunTutorial(true);
-    }
+    const timeoutId = window.setTimeout(() => {
+      if (localStorage.getItem(TUTORIAL_KEY) !== "true") {
+        setRunTutorial(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   const handleTutorialDone = useCallback(() => {
@@ -248,7 +253,7 @@ export function DiaryPage() {
     }
     setExporting(true);
     try {
-      await downloadMonthlyPdf(year, month, data.days, {
+      await downloadMonthlyPdf(year, month, data.days, data.entries, {
         name: profileName,
         avatarUrl,
       });
@@ -260,7 +265,7 @@ export function DiaryPage() {
     } finally {
       setExporting(false);
     }
-  }, [avatarUrl, data.days, exportMonth, profileName]);
+  }, [avatarUrl, data.days, data.entries, exportMonth, profileName]);
 
   if (!ready) {
     return (
@@ -527,6 +532,9 @@ export function DiaryPage() {
               selectedYmd={selectedYmd}
               onSelectDate={handlePickDate}
             />
+            <Box mt={4}>
+              <MonthInsightsCard selectedYmd={selectedYmd} data={data} />
+            </Box>
           </Box>
 
           <Box flex="1" minW={0} w="100%">
@@ -542,6 +550,15 @@ export function DiaryPage() {
                 isToday={isToday}
                 onGoToday={goToday}
               />
+
+              <Box display={{ base: "block", lg: "none" }}>
+                <MonthInsightsCard
+                  selectedYmd={selectedYmd}
+                  data={data}
+                  collapsible
+                  initialCollapsed
+                />
+              </Box>
 
               <TodaySummaryCard
                 ymd={selectedYmd}

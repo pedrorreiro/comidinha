@@ -1,6 +1,12 @@
-import { MEAL_SLOTS } from "@/constants/meal-slots";
+import { MEAL_SLOTS, type MealSlotDef } from "@/constants/meal-slots";
 import { monthTitlePt } from "@/lib/dates";
-import type { MealSlotId } from "@/types/diary";
+import type { DiaryFoodEntry, MealSlotId } from "@/types/diary";
+
+export type PdfMealRow = {
+  slot: MealSlotDef;
+  content: string;
+  entry: DiaryFoodEntry | null;
+};
 
 export function normalizeSlotContentForPdf(raw?: string): string {
   const text = raw?.trim();
@@ -20,16 +26,36 @@ export function normalizeSlotContentForPdf(raw?: string): string {
 
 export function filledSlotsOfDay(
   dayData?: Partial<Record<MealSlotId, string>>,
-) {
-  return MEAL_SLOTS.map((slot) => ({
-    slot,
-    content: normalizeSlotContentForPdf(dayData?.[slot.id]),
-  })).filter((entry) => entry.content !== "—");
+  dayEntries?: Partial<Record<MealSlotId, DiaryFoodEntry[]>>,
+): PdfMealRow[] {
+  return MEAL_SLOTS.flatMap((slot) => {
+    const entries = dayEntries?.[slot.id] ?? [];
+    if (entries.length > 0) {
+      const rows: PdfMealRow[] = entries.map((entry) => ({
+        slot,
+        entry,
+        content: entry.brandName
+          ? `${entry.foodName} (${entry.brandName})`
+          : entry.foodName,
+      }));
+      return rows;
+    }
+
+    const content = normalizeSlotContentForPdf(dayData?.[slot.id]);
+    if (content === "—") return [];
+    return [{ slot, content, entry: null } satisfies PdfMealRow];
+  });
 }
 
-export function hasAnyMealInDay(dayData?: Partial<Record<MealSlotId, string>>) {
-  if (!dayData) return false;
-  return MEAL_SLOTS.some((slot) => (dayData[slot.id] ?? "").trim().length > 0);
+export function hasAnyMealInDay(
+  dayData?: Partial<Record<MealSlotId, string>>,
+  dayEntries?: Partial<Record<MealSlotId, DiaryFoodEntry[]>>,
+) {
+  return MEAL_SLOTS.some(
+    (slot) =>
+      (dayData?.[slot.id] ?? "").trim().length > 0 ||
+      (dayEntries?.[slot.id]?.length ?? 0) > 0,
+  );
 }
 
 export function chunk<T>(arr: T[], size: number): T[][] {

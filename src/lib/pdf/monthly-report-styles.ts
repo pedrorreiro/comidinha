@@ -129,6 +129,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 7,
   },
+  slotMeta: {
+    marginTop: 3,
+    fontSize: 8,
+    lineHeight: 1.35,
+    color: "#64748b",
+  },
   emptyMonthBox: {
     marginTop: 8,
     paddingVertical: 18,

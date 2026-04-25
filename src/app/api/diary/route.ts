@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
+import { parseFoodEntriesFromText } from "@/lib/diary-food-entry-parser";
+import { moodToEmoji, parseMoodFromText } from "@/lib/diary-mood";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { DiaryData, MealSlotId } from "@/types/diary";
 import { prisma } from "@/server/prisma";
@@ -16,21 +18,70 @@ export async function GET() {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const data = await prisma.diaryMeal.findMany({
+  const foodEntries = await prisma.diaryFoodEntry.findMany({
     where: { userId: user.id },
-    select: { dateYmd: true, slot: true, content: true },
-    orderBy: [{ dateYmd: "asc" }, { slot: "asc" }],
+    select: {
+      id: true,
+      dateYmd: true,
+      slot: true,
+      foodName: true,
+      brandName: true,
+      portionDescription: true,
+      calories: true,
+      moodScore: true,
+    },
+    orderBy: [{ dateYmd: "asc" }, { slot: "asc" }, { sortOrder: "asc" }],
   });
 
   const days: DiaryData["days"] = {};
-  for (const row of data) {
+  const moods: DiaryData["moods"] = {};
+  const entries: DiaryData["entries"] = {};
+  for (const row of foodEntries) {
     const slot = row.slot as MealSlotId;
-    const day = days[row.dateYmd] ?? {};
-    day[slot] = row.content;
-    days[row.dateYmd] = day;
+    const day = entries[row.dateYmd] ?? {};
+    const slotEntries = day[slot] ?? [];
+    slotEntries.push({
+      id: row.id,
+      foodName: row.foodName,
+      brandName: row.brandName,
+      portionDescription: row.portionDescription,
+      calories: row.calories,
+      moodScore: row.moodScore,
+    });
+    day[slot] = slotEntries;
+    entries[row.dateYmd] = day;
+
+    const moodDay = moods[row.dateYmd] ?? {};
+    if (typeof row.moodScore === "number" && typeof moodDay[slot] !== "number") {
+      moodDay[slot] = row.moodScore;
+      moods[row.dateYmd] = moodDay;
+    }
   }
 
-  return NextResponse.json({ v: 1, days } satisfies DiaryData);
+  for (const [dateYmd, dayEntries] of Object.entries(entries)) {
+    const day = days[dateYmd] ?? {};
+    for (const slot of MEAL_SLOTS) {
+      const slotEntries = dayEntries[slot.id] ?? [];
+      if (slotEntries.length === 0) continue;
+
+      const mood = moods[dateYmd]?.[slot.id];
+      const header = `[${moodToEmoji(mood)}] Refeição`;
+      const lines = slotEntries.map((entry) => {
+        const base = entry.brandName
+          ? `${entry.foodName} (${entry.brandName})`
+          : entry.foodName;
+        const extras = [
+          entry.portionDescription ?? null,
+          typeof entry.calories === "number" ? `${Math.round(entry.calories)} kcal` : null,
+        ].filter(Boolean);
+        return extras.length > 0 ? `${base} - ${extras.join(" - ")}` : base;
+      });
+      day[slot.id] = [header, ...lines].join("\n");
+    }
+    days[dateYmd] = day;
+  }
+
+  return NextResponse.json({ v: 1, days, entries, moods } satisfies DiaryData);
 }
 
 type PutPayload = {
@@ -64,27 +115,37 @@ export async function PUT(req: Request) {
 
   const trimmed = text.trim();
   if (!trimmed) {
-    await prisma.diaryMeal.deleteMany({
+    await prisma.diaryFoodEntry.deleteMany({
       where: { userId: user.id, dateYmd, slot },
     });
     return NextResponse.json({ ok: true });
   }
 
-  await prisma.diaryMeal.upsert({
-    where: {
-      userId_dateYmd_slot: { userId: user.id, dateYmd, slot },
-    },
-    create: {
-      userId: user.id,
-      dateYmd,
-      slot,
-      content: text,
-      updatedAt: new Date(),
-    },
-    update: {
-      content: text,
-      updatedAt: new Date(),
-    },
+  const foodEntries = parseFoodEntriesFromText(dateYmd, slot as MealSlotId, text);
+  const moodScore = parseMoodFromText(text);
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.diaryFoodEntry.deleteMany({
+      where: { userId: user.id, dateYmd, slot },
+    });
+
+    if (foodEntries.length > 0) {
+      await tx.diaryFoodEntry.createMany({
+        data: foodEntries.map((entry) => ({
+          userId: user.id,
+          dateYmd: entry.dateYmd,
+          slot: entry.slot,
+          sortOrder: entry.sortOrder,
+          foodName: entry.foodName,
+          brandName: entry.brandName,
+          portionDescription: entry.portionDescription,
+          calories: entry.calories,
+          moodScore,
+          updatedAt: now,
+        })),
+      });
+    }
   });
 
   return NextResponse.json({ ok: true });

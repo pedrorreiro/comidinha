@@ -2,7 +2,7 @@ import type { DiaryData } from "@/types/diary";
 
 const STORAGE_KEY = "diario-alimentar-v1";
 
-const emptyState = (): DiaryData => ({ v: 1, days: {} });
+const emptyState = (): DiaryData => ({ v: 1, days: {}, entries: {}, moods: {} });
 
 export function loadDiary(): DiaryData {
   if (typeof window === "undefined") return emptyState();
@@ -13,7 +13,7 @@ export function loadDiary(): DiaryData {
     if (parsed?.v !== 1 || typeof parsed.days !== "object" || !parsed.days) {
       return emptyState();
     }
-    return parsed;
+    return { ...parsed, entries: parsed.entries ?? {}, moods: parsed.moods ?? {} };
   } catch {
     return emptyState();
   }

@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import type { LucideIcon } from "lucide-react";
 import { CalendarDays, FileDown, Sparkles, UtensilsCrossed } from "lucide-react";
+import type { PublicStats } from "@/app/api/stats/route";
 import { DiaryBackground } from "@/components/diary/DiaryBackground";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
@@ -170,11 +172,38 @@ function StepRow({
   );
 }
 
+function formatStat(value: number) {
+  if (value === 0) return null;
+  return `+${value.toLocaleString("pt-BR")}`;
+}
+
 export function HeroLanding() {
   const router = useRouter();
+  const [stats, setStats] = useState<PublicStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/stats", { cache: "no-store" })
+      .then((res) => res.ok ? res.json() as Promise<PublicStats> : null)
+      .then((data) => { if (data) setStats(data); })
+      .catch(() => {});
+  }, []);
 
   const goAuth = () => router.push("/auth");
   const goSignup = () => router.push("/auth?mode=signup");
+
+  const statChips = stats
+    ? [
+        stats.foodEntries > 0 && {
+          label: `${formatStat(stats.foodEntries)} alimentos registrados`,
+        },
+        stats.activeDays > 0 && {
+          label: `${formatStat(stats.activeDays)} dias de diário`,
+        },
+        stats.users > 0 && {
+          label: `${formatStat(stats.users)} usuários ativos`,
+        },
+      ].filter(Boolean)
+    : [];
 
   return (
     <Box position="relative" minH="100dvh" overflow="hidden">
@@ -303,6 +332,42 @@ export function HeroLanding() {
                 Já tenho conta
               </Button>
             </Flex>
+
+            {statChips.length > 0 && (
+              <Flex
+                gap={3}
+                mt={8}
+                flexWrap="wrap"
+                justify="center"
+              >
+                {statChips.map((chip) => (
+                  chip && (
+                    <Flex
+                      key={chip.label}
+                      align="center"
+                      gap={1.5}
+                      px={3}
+                      py={1.5}
+                      borderRadius="full"
+                      borderWidth="1px"
+                      borderColor="var(--app-input-border)"
+                      bg="var(--app-input-bg)"
+                    >
+                      <Box
+                        w="6px"
+                        h="6px"
+                        borderRadius="full"
+                        bg="#7aa3d4"
+                        flexShrink={0}
+                      />
+                      <Text fontSize="xs" fontWeight="medium" color="var(--app-ph)">
+                        {chip.label}
+                      </Text>
+                    </Flex>
+                  )
+                ))}
+              </Flex>
+            )}
           </Flex>
         </Box>
 

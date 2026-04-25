@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
 import { daysInMonth, formatYmd, longDatePt, monthTitlePt } from "@/lib/dates";
-import type { MealSlotId } from "@/types/diary";
+import type { DiaryFoodEntry, MealSlotId } from "@/types/diary";
 
 function normalizeSlotContent(raw?: string): string {
   const text = raw?.trim();
@@ -91,6 +91,7 @@ export async function downloadMonthlyPdf(
   year: number,
   month: number,
   days: Record<string, Partial<Record<MealSlotId, string>>>,
+  entries: Record<string, Partial<Record<MealSlotId, DiaryFoodEntry[]>>> = {},
   profile?: {
     name?: string;
     avatarUrl?: string | null;
@@ -107,7 +108,11 @@ export async function downloadMonthlyPdf(
   const n = daysInMonth(year, month);
   const ymdList = Array.from({ length: n }, (_, i) => formatYmd(year, month, i + 1));
   const filledYmdList = ymdList.filter((ymd) =>
-    MEAL_SLOTS.some((slot) => (days[ymd]?.[slot.id] ?? "").trim().length > 0),
+    MEAL_SLOTS.some(
+      (slot) =>
+        (days[ymd]?.[slot.id] ?? "").trim().length > 0 ||
+        (entries[ymd]?.[slot.id]?.length ?? 0) > 0,
+    ),
   );
 
   // Header com bloco visual único (estilo "cabeçalho de relatório")
@@ -177,10 +182,32 @@ export async function downloadMonthlyPdf(
       const dayNum = Number(ymd.slice(8, 10));
       const dayTitle = longDatePt(year, month, dayNum);
       const dayTitleCap = dayTitle.charAt(0).toUpperCase() + dayTitle.slice(1);
-      const rows = MEAL_SLOTS.map((slot) => ({
-        slot: slot.label,
-        content: normalizeSlotContent(days[ymd]?.[slot.id]),
-      })).filter((row) => row.content !== "—");
+      const rawRows = MEAL_SLOTS.flatMap((slot) => {
+        const slotEntries = entries[ymd]?.[slot.id] ?? [];
+        if (slotEntries.length > 0) {
+          return slotEntries.map((entry) => ({
+            slot: slot.label,
+            food: entry.brandName
+              ? `${entry.foodName} (${entry.brandName})`
+              : entry.foodName,
+            portion: entry.portionDescription ?? "—",
+            calories:
+              typeof entry.calories === "number"
+                ? `${Math.round(entry.calories)} kcal`
+                : "—",
+          }));
+        }
+
+        const content = normalizeSlotContent(days[ymd]?.[slot.id]);
+        if (content === "—") return [];
+
+        return [{ slot: slot.label, food: content, portion: "—", calories: "—" }];
+      });
+      const rows = rawRows.map((row, idx) => ({
+        ...row,
+        // Agrupa visualmente por refeição: exibe o rótulo apenas na primeira linha do bloco.
+        slot: idx > 0 && rawRows[idx - 1]?.slot === row.slot ? "" : row.slot,
+      }));
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
@@ -192,8 +219,8 @@ export async function downloadMonthlyPdf(
       autoTable(doc, {
         startY: tableStartY,
         margin: { left: 44, right: 44 },
-        head: [["Período", "Refeições"]],
-        body: rows.map((row) => [row.slot, row.content]),
+        head: [["Refeição", "Prato", "Porção", "Calorias"]],
+        body: rows.map((row) => [row.slot, row.food, row.portion, row.calories]),
         theme: "grid",
         styles: {
           font: "helvetica",
@@ -213,13 +240,15 @@ export async function downloadMonthlyPdf(
         },
         columnStyles: {
           0: {
-            cellWidth: 165,
+            cellWidth: 90,
             fillColor: [248, 250, 252],
             textColor: [71, 85, 105],
             fontStyle: "bold",
             fontSize: 10,
           },
-          1: { cellWidth: 340, fontSize: 11 },
+          1: { cellWidth: 220, fontSize: 10.5 },
+          2: { cellWidth: 125, fontSize: 10 },
+          3: { cellWidth: 70, fontSize: 10, halign: "right" },
         },
         didDrawPage: () => {
           const pageHeight = doc.internal.pageSize.getHeight();
