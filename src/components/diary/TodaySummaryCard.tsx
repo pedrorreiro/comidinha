@@ -18,7 +18,6 @@ import {
 import { getMealSlotForDate, MEAL_SLOTS } from "@/constants/meal-slots";
 import { usePalette } from "@/theme/ThemePaletteContext";
 import type { MealSlotId } from "@/types/diary";
-import { FoodSearchInput } from "./FoodSearchInput";
 
 type TodaySummaryCardProps = {
   ymd: string;
@@ -198,17 +197,6 @@ export function TodaySummaryCard({
   const addItem = () => {
     if (!editingSlot) return;
     const item = normalizeItemText(itemDraft);
-    if (!item) return;
-    const nextItems = [...items, item];
-    setItems(nextItems);
-    persistEditingItems(nextItems);
-    setItemDraft("");
-    itemInputRef.current?.focus();
-  };
-
-  const addPickedFood = (entry: string) => {
-    if (!editingSlot) return;
-    const item = normalizeItemText(entry);
     if (!item) return;
     const nextItems = [...items, item];
     setItems(nextItems);
@@ -473,11 +461,10 @@ export function TodaySummaryCard({
               {isEditing ? (
                 <Box>
                   <Box mb={2.5}>
-                    <FoodSearchInput
-                      inputRef={itemInputRef}
+                    <Input
+                      ref={itemInputRef}
                       value={itemDraft}
-                      onChange={setItemDraft}
-                      onPickFood={addPickedFood}
+                      onChange={(e) => setItemDraft(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -487,6 +474,12 @@ export function TodaySummaryCard({
                       placeholder="O que você comeu?"
                       size="md"
                       borderRadius="xl"
+                      fontSize="sm"
+                      borderColor={palette.border}
+                      _focusVisible={{
+                        borderColor: palette.borderGlow,
+                        boxShadow: "none",
+                      }}
                     />
                   </Box>
                   <Button
@@ -794,11 +787,10 @@ export function TodaySummaryCard({
                 <Box>
                   <Flex gap={2} mb={3} align="center">
                     <Box flex="1">
-                      <FoodSearchInput
-                        inputRef={itemInputRef}
+                      <Input
+                        ref={itemInputRef}
                         value={itemDraft}
-                        onChange={setItemDraft}
-                        onPickFood={addPickedFood}
+                        onChange={(e) => setItemDraft(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -808,6 +800,9 @@ export function TodaySummaryCard({
                         placeholder="Adicionar item da refeição"
                         size="md"
                         borderRadius="lg"
+                        fontSize="sm"
+                        borderColor={palette.border}
+                        _focusVisible={{ borderColor: palette.borderGlow, boxShadow: "none" }}
                       />
                     </Box>
                     <Button

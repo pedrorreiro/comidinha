@@ -5,7 +5,6 @@ import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import type { MealSlotDef } from "@/constants/meal-slots";
 import { usePalette } from "@/theme/ThemePaletteContext";
 import type { MealSlotId } from "@/types/diary";
-import { FoodSearchInput } from "./FoodSearchInput";
 
 type QuickMealEntryProps = {
   slots: MealSlotDef[];
@@ -30,14 +29,6 @@ export function QuickMealEntry({ slots, onAddEntry }: QuickMealEntryProps) {
 
   const addItem = () => {
     const item = normalizeItemText(itemDraft);
-    if (!item) return;
-    setItems((prev) => [...prev, item]);
-    setItemDraft("");
-    itemInputRef.current?.focus();
-  };
-
-  const addPickedFood = (entry: string) => {
-    const item = normalizeItemText(entry);
     if (!item) return;
     setItems((prev) => [...prev, item]);
     setItemDraft("");
@@ -168,11 +159,10 @@ export function QuickMealEntry({ slots, onAddEntry }: QuickMealEntryProps) {
         >
           Itens consumidos
         </Text>
-        <FoodSearchInput
-          inputRef={itemInputRef}
+        <Input
+          ref={itemInputRef}
           value={itemDraft}
-          onChange={setItemDraft}
-          onPickFood={addPickedFood}
+          onChange={(e) => setItemDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -182,6 +172,7 @@ export function QuickMealEntry({ slots, onAddEntry }: QuickMealEntryProps) {
           placeholder="Ex.: pão integral com ovo"
           borderRadius="lg"
           size="sm"
+          fontSize="sm"
         />
         <Flex justify="space-between" align="center" gap={3} flexWrap="wrap">
           <Text fontSize="xs" color={palette.textMuted}>
