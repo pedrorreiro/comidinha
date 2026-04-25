@@ -16,7 +16,7 @@ import { BookOpen, CalendarDays, FileDown, Plus, UserRound, X } from "lucide-rea
 import { toast } from "sonner";
 import { MEAL_SLOTS } from "@/constants/meal-slots";
 import { useDiary } from "@/hooks/useDiary";
-import { parseYmd, todayYmd } from "@/lib/dates";
+import { diaryTodayYmd, parseYmd, todayYmd } from "@/lib/dates";
 import { downloadMonthlyPdf } from "@/lib/pdf/download-monthly-pdf";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { usePalette } from "@/theme/ThemePaletteContext";
@@ -39,7 +39,7 @@ export function DiaryPage() {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const { data, setMeal, ready } = useDiary();
-  const [selectedYmd, setSelectedYmd] = useState(todayYmd);
+  const [selectedYmd, setSelectedYmd] = useState(() => diaryTodayYmd());
   const [exportMonth, setExportMonth] = useState(() =>
     dateToMonthInput(new Date()),
   );
@@ -207,14 +207,14 @@ export function DiaryPage() {
 
 
   const parts = useMemo(
-    () => parseYmd(selectedYmd) ?? parseYmd(todayYmd())!,
+    () => parseYmd(selectedYmd) ?? parseYmd(diaryTodayYmd())!,
     [selectedYmd],
   );
-  const today = todayYmd();
+  const today = diaryTodayYmd();
   const isToday = selectedYmd === today;
 
   const goToday = useCallback(() => {
-    setSelectedYmd(todayYmd());
+    setSelectedYmd(diaryTodayYmd());
   }, []);
 
   const handlePickDate = useCallback((ymd: string) => {

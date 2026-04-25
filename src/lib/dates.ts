@@ -11,6 +11,23 @@ export function todayYmd(): string {
   return formatYmd(t.getFullYear(), t.getMonth() + 1, t.getDate());
 }
 
+/**
+ * Dia de referência do diário:
+ * na madrugada (antes de `cutoffHour`), considera o dia anterior.
+ */
+export function diaryTodayYmd(cutoffHour = 2): string {
+  const now = new Date();
+  const reference = new Date(now);
+  if (now.getHours() < cutoffHour) {
+    reference.setDate(reference.getDate() - 1);
+  }
+  return formatYmd(
+    reference.getFullYear(),
+    reference.getMonth() + 1,
+    reference.getDate(),
+  );
+}
+
 export function parseYmd(
   ymd: string,
 ): { year: number; month: number; day: number } | null {
