@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import type { LucideIcon } from "lucide-react";
-import { CalendarDays, FileDown, Sparkles, UtensilsCrossed } from "lucide-react";
+import {
+  CalendarDays,
+  FileDown,
+  Sparkles,
+  UserRound,
+  UtensilsCrossed,
+} from "lucide-react";
 import type { PublicStats } from "@/app/api/stats/route";
 import { DiaryBackground } from "@/components/diary/DiaryBackground";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -191,18 +197,35 @@ export function HeroLanding() {
   const goAuth = () => router.push("/auth");
   const goSignup = () => router.push("/auth?mode=signup");
 
-  const statChips = stats
+  const statCards: Array<{ id: string; value: string; label: string; icon: LucideIcon }> = stats
     ? [
-        stats.foodEntries > 0 && {
-          label: `${formatStat(stats.foodEntries)} alimentos registrados`,
-        },
-        stats.activeDays > 0 && {
-          label: `${formatStat(stats.activeDays)} dias de diário`,
-        },
-        stats.users > 0 && {
-          label: `${formatStat(stats.users)} usuários ativos`,
-        },
-      ].filter(Boolean)
+        stats.foodEntries > 0
+          ? {
+              id: "foodEntries",
+              value: formatStat(stats.foodEntries) ?? "+0",
+              label: "alimentos registrados",
+              icon: UtensilsCrossed,
+            }
+          : null,
+        stats.activeDays > 0
+          ? {
+              id: "activeDays",
+              value: formatStat(stats.activeDays) ?? "+0",
+              label: "dias de diário",
+              icon: CalendarDays,
+            }
+          : null,
+        stats.users > 0
+          ? {
+              id: "users",
+              value: formatStat(stats.users) ?? "+0",
+              label: "usuários ativos",
+              icon: UserRound,
+            }
+          : null,
+      ].filter((item): item is { id: string; value: string; label: string; icon: LucideIcon } =>
+        Boolean(item),
+      )
     : [];
 
   return (
@@ -333,38 +356,69 @@ export function HeroLanding() {
               </Button>
             </Flex>
 
-            {statChips.length > 0 && (
+            {statCards.length > 0 && (
               <Flex
-                gap={3}
+                gap={{ base: 3, md: 4 }}
                 mt={8}
                 flexWrap="wrap"
                 justify="center"
+                w="100%"
+                maxW={{ base: "360px", md: "980px" }}
               >
-                {statChips.map((chip) => (
-                  chip && (
+                {statCards.map((card) => (
+                  <Flex
+                    key={card.id}
+                    direction={{ base: "row", md: "column" }}
+                    align="center"
+                    justify={{ base: "flex-start", md: "center" }}
+                    gap={{ base: 3, md: 2 }}
+                    px={{ base: 4, md: 9 }}
+                    py={{ base: 3, md: 7 }}
+                    borderRadius="xl"
+                    borderWidth="1px"
+                    borderColor="var(--app-input-border)"
+                    bg="var(--app-input-bg)"
+                    w={{ base: "100%", md: "auto" }}
+                    minW={{ base: "0", md: "280px" }}
+                    boxShadow="0 14px 36px rgba(15, 23, 42, 0.12)"
+                  >
                     <Flex
-                      key={chip.label}
+                      w={{ base: "36px", md: "40px" }}
+                      h={{ base: "36px", md: "40px" }}
+                      borderRadius="lg"
                       align="center"
-                      gap={1.5}
-                      px={3}
-                      py={1.5}
-                      borderRadius="full"
-                      borderWidth="1px"
-                      borderColor="var(--app-input-border)"
-                      bg="var(--app-input-bg)"
+                      justify="center"
+                      bg="rgba(122, 163, 212, 0.18)"
+                      color="#8ab2dd"
                     >
-                      <Box
-                        w="6px"
-                        h="6px"
-                        borderRadius="full"
-                        bg="#7aa3d4"
-                        flexShrink={0}
-                      />
-                      <Text fontSize="xs" fontWeight="medium" color="var(--app-ph)">
-                        {chip.label}
+                      <card.icon size={20} strokeWidth={2} />
+                    </Flex>
+                    <Flex
+                      direction="column"
+                      align={{ base: "flex-start", md: "center" }}
+                      justify="center"
+                      gap={0.5}
+                    >
+                      <Text
+                        fontSize={{ base: "2xl", md: "4xl" }}
+                        fontWeight="bold"
+                        letterSpacing="-0.03em"
+                        lineHeight="1"
+                        color="var(--app-body-fg)"
+                      >
+                        {card.value}
+                      </Text>
+                      <Text
+                        fontSize={{ base: "2xs", md: "sm" }}
+                        fontWeight="semibold"
+                        textTransform="uppercase"
+                        letterSpacing="0.06em"
+                        color="var(--app-ph)"
+                      >
+                        {card.label}
                       </Text>
                     </Flex>
-                  )
+                  </Flex>
                 ))}
               </Flex>
             )}
